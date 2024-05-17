@@ -647,7 +647,7 @@ jobs:
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
-        uses: ncipollo/release-action@v1.11.1
+        uses: ncipollo/release-action@v1.14.0
         with:
           name: "Unofficial VyOS Packages (`${{ inputs.release-train }}`)"
           tag: "packages-${{ inputs.release-train }}"
