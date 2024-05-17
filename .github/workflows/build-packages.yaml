@@ -584,23 +584,25 @@ jobs:
         id: clone-vyos-build
         run: |
           set -eux
+          rm --recursive --force vyos-build
           git clone -b equuleus --single-branch https://github.com/vyos/vyos-build
+          git -C vyos-build reset --hard $(git describe --tags --abbrev=0)
       - name: 'Get Linux kernel version'
         id: get-kernel-version
         run: |
           set -eux
-          echo "KERNEL_VERSION=$(jq -r '.kernel_version' vyos-build/data/defaults.json)" >> "$GITHUB_ENV"
+          echo "KERNEL_TARBALL_VERSION=$(jq -r '.kernel_version' vyos-build/data/defaults.json)" >> "$GITHUB_ENV"
       - name: 'Build the Linux kernel'
         id: build-kernel
         run: |
           set -eux
           cd vyos-build/packages/linux-kernel
           gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
-          curl -OL https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.xz
-          curl -OL https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_VERSION}.tar.sign
-          xz -cd linux-${KERNEL_VERSION}.tar.xz | gpg2 --verify linux-${KERNEL_VERSION}.tar.sign -; if [ $? -ne 0 ]; then exit 1; fi
-          tar xf linux-${KERNEL_VERSION}.tar.xz
-          ln -s linux-${KERNEL_VERSION} linux
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${KERNEL_TARBALL_VERSION}.tar.sign
+          xz -cd linux-${KERNEL_TARBALL_VERSION}.tar.xz | gpg2 --verify linux-${KERNEL_TARBALL_VERSION}.tar.sign -; if [ $? -ne 0 ]; then exit 1; fi
+          tar xf linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          ln -s linux-${KERNEL_TARBALL_VERSION} linux
           ./build-kernel.sh
       - name: 'Build the `vyos-linux-firmware` package'
         id: build-kernel-firmware
@@ -644,6 +646,9 @@ jobs:
           cd vyos-build
           git clone -b equuleus --single-branch https://github.com/vyos/vyos-1x
           cd vyos-1x
+          git reset --hard $(git describe --tags --abbrev=0)
+          sed -i "s/vyos\/\*/1.3.\*/" debian/rules
+          sed -i "s/ --dirty//" debian/rules
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
@@ -950,23 +955,24 @@ jobs:
           set -eux
           rm --recursive --force vyos-build
           git clone -b sagitta --single-branch https://github.com/vyos/vyos-build
+          git -C vyos-build reset --hard $(git describe --tags --abbrev=0)
       - name: 'Get Linux kernel version'
         id: get-kernel-version
         run: |
           set -eux
           pip3 install --break-system-packages tomlq
-          echo "KERNEL_VERSION=$(tomlq -r '.kernel_version' vyos-build/data/defaults.toml)" >> "$GITHUB_ENV"
+          echo "KERNEL_TARBALL_VERSION=$(tomlq -r '.kernel_version' vyos-build/data/defaults.toml)" >> "$GITHUB_ENV"
       - name: 'Build the Linux kernel'
         id: build-kernel
         run: |
           set -eux
           cd vyos-build/packages/linux-kernel
           gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
-          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz
-          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.sign
-          xz -cd linux-${KERNEL_VERSION}.tar.xz | gpg2 --verify linux-${KERNEL_VERSION}.tar.sign -; if [ $? -ne 0 ]; then exit 1; fi
-          tar xf linux-${KERNEL_VERSION}.tar.xz
-          ln -s linux-${KERNEL_VERSION} linux
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_TARBALL_VERSION}.tar.sign
+          xz -cd linux-${KERNEL_TARBALL_VERSION}.tar.xz | gpg2 --verify linux-${KERNEL_TARBALL_VERSION}.tar.sign -; if [ $? -ne 0 ]; then exit 1; fi
+          tar xf linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          ln -s linux-${KERNEL_TARBALL_VERSION} linux
           ./build-kernel.sh
       - name: 'Build the `vyos-linux-firmware` package'
         id: build-kernel-firmware
@@ -1025,6 +1031,7 @@ jobs:
           cd vyos-build
           git clone -b sagitta --single-branch https://github.com/vyos/vyos-1x
           cd vyos-1x
+          git reset --hard $(git describe --tags --abbrev=0)
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
