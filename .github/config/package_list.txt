@@ -1,0 +1,13 @@
+accel-ppp
+linux-headers
+linux-image
+linux-libc-dev
+openvpn-dco
+vyos-1x-dbgsym
+vyos-1x-smoketest
+vyos-1x-vmware
+vyos-1x
+vyos-intel-ixgbevf
+vyos-intel-ixgbe
+vyos-intel-qat
+vyos-linux-firmware
