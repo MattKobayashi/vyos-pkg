@@ -5,7 +5,7 @@
 #
 # This file was also based on the Jekyll page builder which is a default from Github.
 name: 'Deploy unofficial VyOS repository'
-run-name: 'Deploy unofficial VyOS ${{ inputs.train }} repository'
+run-name: 'Deploy unofficial VyOS `${{ inputs.train }}` repository'
 
 on:
   workflow_dispatch:
