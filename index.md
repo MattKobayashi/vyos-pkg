@@ -27,5 +27,4 @@ Please contribute changes and bug reports in the relevant repository above.
 
 Have a security issue? Please email [Matthew](mailto:matthew@kobayashi.au) with details.
 
-Have your own action? Please create a 
-[pull request on this repository]({{ site.url }}/pulls).
+Have your own action? Please create a [pull request on this repository](https://mattkobayashi.github.io/vyos-pkg.github.io/pulls).
