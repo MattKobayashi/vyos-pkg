@@ -1,20 +1,13 @@
 ---
 name: 'Build unofficial VyOS .deb Packages'
-run-name: 'Build unofficial VyOS `${{ inputs.release-train }}` .deb Packages'
 
 on:
   workflow_dispatch:
-    inputs:
-      release-train:
-        description: 'Release train to build packages for? (e.g. `sagitta`)'
-        type: string
-        required: true
 
 jobs:
   build-packages-equuleus:
     name: 'Build and upload .deb packages (`equuleus`)'
     runs-on: ubuntu-latest
-    if: ${{ contains(inputs.release-train, 'equuleus') || contains(inputs.release-train, 'all') }}
     permissions:
       contents: write
       packages: write
@@ -116,8 +109,8 @@ jobs:
         id: create-release
         uses: ncipollo/release-action@v1.11.1
         with:
-          name: "Unofficial VyOS Packages (`${{ inputs.release-train }}`)"
-          tag: "packages-${{ inputs.release-train }}"
+          name: "Unofficial VyOS Packages (`equuleus`)"
+          tag: "packages-equuleus"
           artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
           artifactContentType: application/vnd.debian.binary-package
           artifactErrorsFailBuild: true
@@ -128,7 +121,6 @@ jobs:
   build-packages-sagitta:
     name: 'Build and upload .deb packages (`sagitta`)'
     runs-on: [self-hosted, sagitta]
-    if: ${{ contains(inputs.release-train, 'sagitta') || contains(inputs.release-train, 'all') }}
     permissions:
       contents: write
       packages: write
@@ -503,8 +495,343 @@ jobs:
         id: create-release
         uses: ncipollo/release-action@v1
         with:
-          name: "Unofficial VyOS Packages (`${{ inputs.release-train }}`)"
-          tag: "packages-${{ inputs.release-train }}"
+          name: "Unofficial VyOS Packages (`sagitta`)"
+          tag: "packages-sagitta"
+          artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
+          artifactContentType: application/vnd.debian.binary-package
+          artifactErrorsFailBuild: true
+          draft: true
+          allowUpdates: false
+          omitDraftDuringUpdate: true
+
+  build-packages-circinus:
+    name: 'Build and upload .deb packages (`circinus`)'
+    runs-on: [self-hosted, circinus]
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: 'Install build dependencies'
+        id: install-build-deps
+        run: |
+          /bin/echo -e 'APT::Install-Recommends "0";\nAPT::Install-Suggests "0";' > /etc/apt/apt.conf.d/01norecommends
+          apt-get update
+          apt-get install --yes \
+            cmake \
+            python3-sphinx
+          apt-get install --yes \
+            dialog \
+            apt-utils \
+            locales
+          echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
+          export LANG=en_US.utf8
+          export OCAML_VERSION=4.12.0
+          apt-get install --yes \
+            bash \
+            bash-completion \
+            vim \
+            vim-autopep8 \
+            nano \
+            git \
+            curl \
+            sudo \
+            mc \
+            pbuilder \
+            devscripts \
+            equivs \
+            lsb-release \
+            libtool \
+            libapt-pkg-dev \
+            flake8 \
+            pkg-config \
+            debhelper \
+            gosu \
+            po4a \
+            openssh-client \
+            jq
+          apt-get install --yes \
+            build-essential \
+            python3-pystache \
+            squashfs-tools \
+            genisoimage \
+            fakechroot \
+            pipx \
+            python3-git \
+            python3-pip \
+            python3-flake8 \
+            python3-autopep8 \
+            python3-tomli \
+            yq \
+            debootstrap \
+            live-build \
+            gdisk \
+            dosfstools
+          apt-get install --yes swtpm
+          if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
+            apt-get install --yes \
+              syslinux \
+              grub2; \
+          fi
+          apt-get install --yes \
+            debhelper \
+            libffi-dev \
+            libpcre3-dev \
+            unzip
+          dpkg-reconfigure ca-certificates; \
+            if dpkg-architecture -iarmhf; then \
+              echo "cacert=/etc/ssl/certs/ca-certificates.crt" >> ~/.curlrc; \
+            fi
+          curl https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh \
+            --output /tmp/opam_install.sh --retry 10 --retry-delay 5 && \
+            sed -i 's/read BINDIR/BINDIR=""/' /tmp/opam_install.sh && sh /tmp/opam_install.sh && \
+            opam init --root=/opt/opam --comp=${OCAML_VERSION} --disable-sandboxing --no-setup
+          eval $(opam env --root=/opt/opam --set-root) && \
+            opam pin add pcre https://github.com/mmottl/pcre-ocaml.git#0c4ca03a -y
+          eval $(opam env --root=/opt/opam --set-root) && opam install -y \
+            re \
+            num \
+            ctypes \
+            ctypes-foreign \
+            ctypes-build \
+            containers \
+            fileutils \
+            xml-light
+          eval $(opam env --root=/opt/opam --set-root) && \
+            opam pin add vyos1x-config https://github.com/vyos/vyos1x-config.git#f8d6abdf -y
+          apt-get install --yes \
+            quilt \
+            libpcre3-dev \
+            libffi-dev
+          eval $(opam env --root=/opt/opam --set-root) && \
+            git clone https://github.com/vyos/libvyosconfig.git /tmp/libvyosconfig && \
+            cd /tmp/libvyosconfig && git checkout c6141d97 && \
+            dpkg-buildpackage -uc -us -tc -b && \
+            dpkg -i /tmp/libvyosconfig0_*_$(dpkg-architecture -qDEB_HOST_ARCH).deb
+          apt-get install --yes \
+            zlib1g-dev
+          wget -O /tmp/open-vmdk-master.zip https://github.com/vmware/open-vmdk/archive/master.zip && \
+            unzip -d /tmp/ /tmp/open-vmdk-master.zip && \
+            cd /tmp/open-vmdk-master/ && make && make install
+          wget https://salsa.debian.org/klausenbusk-guest/debootstrap/commit/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch \
+            -O /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch && \
+            git clone https://salsa.debian.org/installer-team/debootstrap /tmp/debootstrap && \
+            cd /tmp/debootstrap && git checkout 1.0.114 && \
+            patch -p1 < /tmp/a9a603b17cadbf52cb98cde0843dc9f23a08b0da.patch && \
+            dch -n "Applying fix for docker image compile" && \
+            dpkg-buildpackage -us -uc && \
+            sudo dpkg -i ../debootstrap*.deb
+          apt-get install --yes \
+            cmake \
+            gnupg2 \
+            rsync \
+            libelf-dev \
+            libncurses5-dev \
+            flex \
+            bison \
+            bc \
+            kmod \
+            cpio \
+            python-is-python3 \
+            dwarves \
+            nasm \
+            rdfind
+          apt-get install --yes \
+            pciutils \
+            yasm \
+            ruby \
+            libudev-dev \
+            ruby-dev \
+            rubygems \
+            build-essential
+          gem install --no-document fpm
+          pip install --break-system-packages \
+            git+https://github.com/aristanetworks/j2lint.git@341b5d5db86 \
+            pyhumps==3.8.0; \
+          apt-get install --yes \
+            dh-python \
+            fakeroot \
+            iproute2 \
+            libzmq3-dev \
+            procps \
+            python3 \
+            python3-setuptools \
+            python3-inotify \
+            python3-xmltodict \
+            python3-lxml \
+            python3-nose \
+            python3-netifaces \
+            python3-jinja2 \
+            python3-jmespath \
+            python3-psutil \
+            python3-stdeb \
+            python3-all \
+            python3-coverage \
+            pylint \
+            quilt \
+            whois
+          GO_VERSION_INSTALL="1.21.3" ; \
+          wget -O /tmp/go${GO_VERSION_INSTALL}.linux-amd64.tar.gz https://go.dev/dl/go${GO_VERSION_INSTALL}.linux-$(dpkg-architecture -qDEB_HOST_ARCH).tar.gz ; \
+            tar -C /opt -xzf /tmp/go*.tar.gz && \
+            rm /tmp/go*.tar.gz
+          echo "export PATH=/opt/go/bin:$PATH" >> /etc/bash.bashrc
+          apt-get install --yes \
+            libc-ares-dev \
+            libev-dev
+          if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
+            apt-get install --yes \
+              python3-pexpect \
+              ovmf \
+              qemu-system-x86 \
+              qemu-utils \
+              qemu-kvm; \
+          fi
+          if dpkg-architecture -ii386 || dpkg-architecture -iamd64; then \
+            apt-get install --yes \
+              kpartx \
+              parted \
+              udev \
+              grub-pc \
+              grub2-common; \
+          fi
+          apt-get install --yes \
+            python3-configobj \
+            python3-httpretty \
+            python3-jsonpatch \
+            python3-mock \
+            python3-oauthlib \
+            python3-pep8 \
+            python3-pyflakes \
+            python3-serial \
+            python3-unittest2 \
+            python3-yaml \
+            python3-jsonschema \
+            python3-contextlib2 \
+            python3-pytest-cov \
+            cloud-utils
+          if dpkg-architecture -iarm64; then \
+            apt-get install --yes \
+              dosfstools \
+              u-boot-tools \
+              grub-efi-$(dpkg-architecture -qDEB_HOST_ARCH); \
+          elif dpkg-architecture -iarmhf; then \
+            apt-get install --yes \
+              dosfstools \
+              u-boot-tools \
+              grub-efi-arm; \
+          fi
+          apt-get install --yes \
+            debhelper \
+            libssl-dev \
+            openvpn
+          git clone -b 4.4.6 https://github.com/perfsonar/i2util.git /tmp/i2util && \
+            cd /tmp/i2util && \
+            dpkg-buildpackage -uc -us -tc -b && \
+            dpkg -i /tmp/*i2util*_$(dpkg-architecture -qDEB_HOST_ARCH).deb
+          apt-get install --yes \
+            parted \
+            udev \
+            zip
+          apt-get install --yes \
+            liblua5.3-dev \
+            libssl3 \
+            libssl-dev \
+            libpcre3-dev
+          apt-get install --yes \
+            debmake \
+            python3-debian
+          apt-get install --yes \
+            libnl-genl-3-dev \
+            libxtables-dev
+          apt-get install --yes \
+            asciidoc-base
+      - name: 'Clone the `vyos-build` repository'
+        id: clone-vyos-build
+        run: |
+          set -eux
+          rm --recursive --force vyos-build
+          git clone -b current --single-branch https://github.com/vyos/vyos-build
+      - name: 'Get Linux kernel version'
+        id: get-kernel-version
+        run: |
+          set -eux
+          pip3 install --break-system-packages tomlq
+          echo "KERNEL_TARBALL_VERSION=$(tomlq -r '.kernel_version' vyos-build/data/defaults.toml)" >> "$GITHUB_ENV"
+      - name: 'Build the Linux kernel'
+        id: build-kernel
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          curl -OL https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_TARBALL_VERSION}.tar.sign
+          xz -cd linux-${KERNEL_TARBALL_VERSION}.tar.xz | gpg2 --verify linux-${KERNEL_TARBALL_VERSION}.tar.sign -; if [ $? -ne 0 ]; then exit 1; fi
+          tar xf linux-${KERNEL_TARBALL_VERSION}.tar.xz
+          ln -s linux-${KERNEL_TARBALL_VERSION} linux
+          ./build-kernel.sh
+      - name: 'Build the `vyos-linux-firmware` package'
+        id: build-kernel-firmware
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          git clone https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+          git -C linux-firmware reset --hard $(awk -v sq="'" '/.name....linux-firmware./ { gsub(/,/, "", $4); gsub(sq, "", $4); print $4 }' Jenkinsfile)
+          ./build-linux-firmware.sh
+      - name: 'Build the `accel-ppp` package'
+        id: build-accel-ppp
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          git clone https://github.com/accel-ppp/accel-ppp.git
+          git -C accel-ppp reset --hard $(grep -A 5 'accel-ppp' Jenkinsfile | awk -v sq="'" '/scmCommit/ { gsub(/,/, "", $4); gsub(sq, "", $4); print $4 }')
+          ./build-accel-ppp.sh
+      - name: 'Build the `vyos-intel-ixgbe` package'
+        id: build-intel-ixgbe
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          ./build-intel-ixgbe.sh
+      - name: 'Build the `vyos-intel-ixgbevf` package'
+        id: build-intel-ixgbevf
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          ./build-intel-ixgbevf.sh
+      - name: 'Build the `intel-qat` package'
+        id: build-intel-qat
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          ./build-intel-qat.sh
+      - name: 'Build the `ovpn-dco` package'
+        id: build-ovpn-dco
+        run: |
+          set -eux
+          cd vyos-build/packages/linux-kernel
+          git clone https://github.com/OpenVPN/ovpn-dco.git
+          git -C ovpn-dco reset --hard $(awk -v sq="'" '/.name....ovpn-dco./ { gsub(/,/, "", $3); gsub(sq, "", $3); print $3 }' Jenkinsfile)
+          ./build-openvpn-dco.sh
+      - name: 'Build the `telegraf` package'
+        id: build-telegraf
+        run: |
+          set -eux
+          cd vyos-build/packages/telegraf
+          git clone https://github.com/influxdata/telegraf.git
+          git -C telegraf reset --hard $(awk -v sq="'" '/.scmCommit./ { gsub(/,/, "", $2); gsub(sq, "", $2); print $2 }' Jenkinsfile)
+          ./build.sh
+      - name: 'Build the `vyos-1x` packages'
+        id: build-vyos-1x
+        run: |
+          set -eux
+          cd vyos-build
+          git clone -b current --single-branch https://github.com/vyos/vyos-1x
+          cd vyos-1x
+          dpkg-buildpackage -uc -us -tc -b
+      - name: 'Create a new release'
+        id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          name: "Unofficial VyOS Packages (`circinus`)"
+          tag: "packages-circinus"
           artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
           artifactContentType: application/vnd.debian.binary-package
           artifactErrorsFailBuild: true
