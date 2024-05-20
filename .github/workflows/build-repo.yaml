@@ -27,12 +27,13 @@ concurrency:
 
 jobs:
   build:
+    name: 'Build unofficial VyOS .deb repository'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: Install required packages
+      - name: 'Install required packages'
         run: |
           until sudo apt-get update
           do
@@ -40,58 +41,59 @@ jobs:
           done
           sudo apt-get install --yes jq createrepo-c coreutils gnupg2 dpkg-dev
 
-      - name: Insert environment variables
+      - name: 'Insert environment variables'
         run: |
           echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)" >> $GITHUB_ENV
           echo REPO_OWNER="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f1)" >> $GITHUB_ENV
           echo REPO_NAME="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f2)" >> $GITHUB_ENV
 
-      - name: Import GPG key
+      - name: 'Import GPG key'
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Confirm GPG Key loaded
+      - name: 'Confirm GPG Key is loaded'
         run: |
           gpg --list-keys
           echo "${{ steps.import_gpg.outputs.fingerprint }}"
 
-      - name: Setup Pages
+      - name: 'Setup Pages'
         uses: actions/configure-pages@v5
 
-      - name: Build with Jekyll
+      - name: 'Build with Jekyll'
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./
           destination: ./_site
 
-      - name: Set permissions on the _site directory
+      - name: 'Set permissions on the _site directory'
         run: sudo chown -R runner:docker _site
 
-      - name: Download latest release .deb files
+      - name: 'Download latest release .deb files'
         run: |
           export SUITE="${{ inputs.release-train }}"
           python3 .github/scripts/get_debs.py
 
-      - name: Build DEB and APT Repos
+      - name: 'Build .deb repository'
         run: |
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
           export SUITE="${{ inputs.release-train }}"
           .github/scripts/build_repo.sh
 
-      - name: Upload artifact
+      - name: 'Upload Pages artifact'
         uses: actions/upload-pages-artifact@v3
 
   deploy:
+    name: 'Deploy unofficial VyOS .deb repository'
     environment:
       name: vyos-pkg-${{ inputs.release-train }}
       url: ${{ steps.deployment.outputs.page_url }}${{ inputs.release-train }}
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
+      - name: 'Deploy to GitHub Pages'
         id: deployment
         uses: actions/deploy-pages@v4
