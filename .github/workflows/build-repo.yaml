@@ -5,12 +5,12 @@
 #
 # This file was also based on the Jekyll page builder which is a default from Github.
 name: 'Deploy unofficial VyOS repository'
-run-name: 'Deploy unofficial VyOS `${{ inputs.train }}` repository'
+run-name: 'Deploy unofficial VyOS `${{ inputs.release-train }}` repository'
 
 on:
   workflow_dispatch:
     inputs:
-      train:
+      release-train:
         description: 'Release train to build repository for? (e.g. `sagitta`)'
         type: string
         required: true
@@ -70,6 +70,11 @@ jobs:
       - name: Set permissions on the _site directory
         run: sudo chown -R runner:docker _site
 
+      - name: Download latest release .deb files
+        run: |
+          export SUITE="${{ inputs.release-train }}"
+          python3 .github/scripts/get_debs.py
+
       - name: Build DEB and APT Repos
         run: |
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
@@ -82,8 +87,8 @@ jobs:
 
   deploy:
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: vyos-pkg-${{ inputs.release-train }}
+      url: ${{ steps.deployment.outputs.page_url }}${{ inputs.release-train }}
     runs-on: ubuntu-latest
     needs: build
     steps:

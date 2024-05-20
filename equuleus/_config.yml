@@ -1,0 +1,15 @@
+title: vyos-pkg-equuleus
+email: matthew@kobayashi.au
+description: >-
+  An unofficial Debian package repository for VyOS-specific packages
+baseurl: "/equuleus"
+url: "https://mattkobayashi.github.io/vyos-pkg"
+github_username: MattKobayashi
+
+# Build settings
+theme: minima
+plugins:
+  - jekyll-feed
+exclude:
+  - tools/
+  - doc/
