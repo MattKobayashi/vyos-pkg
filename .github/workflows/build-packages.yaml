@@ -491,6 +491,24 @@ jobs:
           git reset --hard cd1feee
           # END TODO
           dpkg-buildpackage -uc -us -tc -b
+      - name: 'Build the `vyos-world` package'
+        id: build-vyos-world
+        run: |
+          set -eux
+          cd vyos-build
+          git clone -b sagitta --single-branch https://github.com/vyos/vyos-world
+          cd vyos-world
+          git reset --hard $(git describe --tags --abbrev=0)
+          dpkg-buildpackage -uc -us -tc -b
+      - name: 'Build the `vyos-user-utils` package'
+        id: build-vyos-user-utils
+        run: |
+          set -eux
+          cd vyos-build
+          git clone -b sagitta --single-branch https://github.com/vyos/vyos-user-utils
+          cd vyos-user-utils
+          git reset --hard $(git describe --tags --abbrev=0)
+          dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
         uses: ncipollo/release-action@v1
@@ -825,6 +843,22 @@ jobs:
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-1x
           cd vyos-1x
+          dpkg-buildpackage -uc -us -tc -b
+      - name: 'Build the `vyos-world` package'
+        id: build-vyos-world
+        run: |
+          set -eux
+          cd vyos-build
+          git clone -b current --single-branch https://github.com/vyos/vyos-world
+          cd vyos-world
+          dpkg-buildpackage -uc -us -tc -b
+      - name: 'Build the `vyos-user-utils` package'
+        id: build-vyos-user-utils
+        run: |
+          set -eux
+          cd vyos-build
+          git clone -b current --single-branch https://github.com/vyos/vyos-user-utils
+          cd vyos-user-utils
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
