@@ -82,26 +82,26 @@ repo_sagitta() {
   popd >/dev/null
 }
 
-repo_circinus() {
-  DEB_POOL="_site/circinus/deb/pool/${COMPONENTS:-main}"
-  DEB_DISTS="dists/circinus"
+repo_current() {
+  DEB_POOL="_site/current/deb/pool/${COMPONENTS:-main}"
+  DEB_DISTS="dists/current"
   DEB_DISTS_COMPONENTS="${DEB_DISTS}/${COMPONENTS:-main}/binary-all"
   GPG_TTY=""
   export GPG_TTY
-  pushd _site/circinus/deb >/dev/null
+  pushd _site/current/deb >/dev/null
   mkdir -p "${DEB_DISTS_COMPONENTS}"
   echo "Scanning all downloaded DEB Packages and creating Packages file."
   dpkg-scanpackages --arch all pool/ > "${DEB_DISTS_COMPONENTS}/Packages"
   gzip -9 > "${DEB_DISTS_COMPONENTS}/Packages.gz" < "${DEB_DISTS_COMPONENTS}/Packages"
   bzip2 -9 > "${DEB_DISTS_COMPONENTS}/Packages.bz2" < "${DEB_DISTS_COMPONENTS}/Packages"
   popd >/dev/null
-  pushd "_site/circinus/deb/${DEB_DISTS}" >/dev/null
+  pushd "_site/current/deb/${DEB_DISTS}" >/dev/null
   echo "Making Release file"
   {
     echo "Origin: ${ORIGIN}"
     echo "Label: ${REPO_OWNER}"
-    echo "Suite: circinus"x
-    echo "Codename: circinus"
+    echo "Suite: current"x
+    echo "Codename: current"
     echo "Version: 1.0"
     echo "Architectures: all"
     echo "Components: ${COMPONENTS:-main}"
@@ -120,4 +120,4 @@ repo_circinus() {
 
 repo_equuleus
 repo_sagitta
-repo_circinus
+repo_current
