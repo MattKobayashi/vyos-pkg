@@ -94,7 +94,6 @@ jobs:
           cd vyos-build
           git clone -b equuleus --single-branch https://github.com/vyos/vyos-world
           cd vyos-world
-          git reset --hard $(git describe --tags --abbrev=0)
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Build the `vyos-user-utils` package'
         id: build-vyos-user-utils
@@ -103,17 +102,15 @@ jobs:
           cd vyos-build
           git clone -b equuleus --single-branch https://github.com/vyos/vyos-user-utils
           cd vyos-user-utils
-          git reset --hard $(git describe --tags --abbrev=0)
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Build the `vyos-xe-guest-utilities` package'
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
+          apt-get update && apt-get install --yes golang-go
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
-          git reset --hard $(git describe --tags --abbrev=0)
-          make build
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
@@ -508,7 +505,6 @@ jobs:
           cd vyos-build
           git clone -b sagitta --single-branch https://github.com/vyos/vyos-world
           cd vyos-world
-          git reset --hard $(git describe --tags --abbrev=0)
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Build the `vyos-user-utils` package'
         id: build-vyos-user-utils
@@ -517,17 +513,15 @@ jobs:
           cd vyos-build
           git clone -b sagitta --single-branch https://github.com/vyos/vyos-user-utils
           cd vyos-user-utils
-          git reset --hard $(git describe --tags --abbrev=0)
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Build the `vyos-xe-guest-utilities` package'
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
+          apt-get update && apt-get install --yes golang-go
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
-          git reset --hard $(git describe --tags --abbrev=0)
-          make build
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
@@ -884,11 +878,10 @@ jobs:
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
+          apt-get update && apt-get install --yes golang-go
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
-          git reset --hard $(git describe --tags --abbrev=0)
-          make build
           dpkg-buildpackage -uc -us -tc -b
       - name: 'Create a new release'
         id: create-release
