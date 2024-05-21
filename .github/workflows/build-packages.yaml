@@ -504,9 +504,9 @@ jobs:
           allowUpdates: false
           omitDraftDuringUpdate: true
 
-  build-packages-circinus:
-    name: 'Build and upload .deb packages (`circinus`)'
-    runs-on: [self-hosted, circinus]
+  build-packages-current:
+    name: 'Build and upload .deb packages (`current`)'
+    runs-on: [self-hosted, current]
     permissions:
       contents: write
       packages: write
@@ -830,8 +830,8 @@ jobs:
         id: create-release
         uses: ncipollo/release-action@v1
         with:
-          name: "Unofficial VyOS Packages (`circinus`)"
-          tag: "packages-circinus"
+          name: "Unofficial VyOS Packages (`current`)"
+          tag: "packages-current"
           artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
           artifactContentType: application/vnd.debian.binary-package
           artifactErrorsFailBuild: true

@@ -23,12 +23,12 @@ Run the `build-vyos-image` script from the [`vyos-build` repository](https://git
 sudo ./build-vyos-image iso --architecture amd64 --build-by "j.randomhacker@vyos.io" --vyos-mirror "[trusted=yes] {{ site.url }}/vyos-pkg/sagitta/deb"
 ```
 
-### Using with `vyos-build` for `circinus` (or `current`) release train
+### Using with `vyos-build` for `current` release train
 
 Run the `build-vyos-image` script from the [`vyos-build` repository](https://github.com/vyos/vyos-build/tree/current), passing the --vyos-mirror argument:
 
 ```
-sudo ./build-vyos-image iso --architecture amd64 --build-by "j.randomhacker@vyos.io" --vyos-mirror "[trusted=yes] {{ site.url }}/vyos-pkg/circinus/deb"
+sudo ./build-vyos-image iso --architecture amd64 --build-by "j.randomhacker@vyos.io" --vyos-mirror "[trusted=yes] {{ site.url }}/vyos-pkg/current/deb"
 ```
 
 ## How to contribute?

@@ -28,12 +28,12 @@ for release in response_dict:
 	if break_loop == True:
 		break
 
-os.makedirs("_site/circinus/deb/pool/main", exist_ok=True)
+os.makedirs("_site/current/deb/pool/main", exist_ok=True)
 break_loop = False
 for release in response_dict:
-	if "circinus" in release["tag_name"]:
+	if "current" in release["tag_name"]:
 		for asset in release["assets"]:
-			urllib.request.urlretrieve(asset["browser_download_url"], "_site/circinus/deb/pool/main/" + asset["name"])
+			urllib.request.urlretrieve(asset["browser_download_url"], "_site/current/deb/pool/main/" + asset["name"])
 		break_loop = True
 	if break_loop == True:
 		break
