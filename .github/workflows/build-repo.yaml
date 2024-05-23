@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   build:
-    name: 'Build unofficial VyOS .deb repository'
+    name: 'Build repository'
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout'
@@ -79,7 +79,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
 
   deploy:
-    name: 'Deploy unofficial VyOS .deb repository'
+    name: 'Deploy repository'
     environment:
       name: vyos-pkg
       url: ${{ steps.deployment.outputs.page_url }}

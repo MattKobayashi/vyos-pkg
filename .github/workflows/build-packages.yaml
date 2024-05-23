@@ -529,7 +529,7 @@ jobs:
         with:
           name: "Unofficial VyOS Packages (`sagitta`)"
           tag: "packages-sagitta"
-          artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
+          artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb, vyos-build/packages/telegraf/telegraf/build/dist/*.deb"
           artifactContentType: application/vnd.debian.binary-package
           artifactErrorsFailBuild: true
           draft: true
@@ -889,7 +889,7 @@ jobs:
         with:
           name: "Unofficial VyOS Packages (`current`)"
           tag: "packages-current"
-          artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb"
+          artifacts: "vyos-build/*.deb, vyos-build/packages/linux-kernel/*.deb, vyos-build/packages/telegraf/telegraf/build/dist/*.deb"
           artifactContentType: application/vnd.debian.binary-package
           artifactErrorsFailBuild: true
           draft: true
