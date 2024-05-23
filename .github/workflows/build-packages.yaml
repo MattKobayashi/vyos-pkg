@@ -107,7 +107,7 @@ jobs:
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
-          apt-get update && apt-get install --yes golang-go
+          apt-get update && apt-get install --yes golang-go gawk
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
@@ -518,7 +518,7 @@ jobs:
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
-          apt-get update && apt-get install --yes golang-go
+          apt-get update && apt-get install --yes golang-go gawk
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
@@ -878,7 +878,7 @@ jobs:
         id: build-vyos-xe-guest-utilities
         run: |
           set -eux
-          apt-get update && apt-get install --yes golang-go
+          apt-get update && apt-get install --yes golang-go gawk
           cd vyos-build
           git clone -b current --single-branch https://github.com/vyos/vyos-xe-guest-utilities
           cd vyos-xe-guest-utilities
