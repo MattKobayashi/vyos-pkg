@@ -15,13 +15,13 @@ server = jenkins.Jenkins(
 	username=os.environ.get("JENKINS_USERNAME"),
 	password=os.environ.get("JENKINS_API_KEY")
 	)
-jobs = server.get_jobs()
+root_jobs = server.get_jobs()
 
 releases = ['equuleus', 'sagitta', 'current']
 
 for release_train in releases:
 	os.makedirs(f'./_site/{release_train}/deb/pool/main/')
-	for folder in jobs:
+	for folder in root_jobs:
 		if folder['name'] == f'vyos-{release_train}':
 			for job in folder['jobs']:
 				job_name = f'vyos-{release_train}/' + job['name']
