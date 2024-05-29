@@ -1,0 +1,8 @@
+*.deb
+poetry.lock
+pyproject.toml
+*.tar.gz
+*.tar.xz
+*.dsc
+__pycache__/
+.DS_Store

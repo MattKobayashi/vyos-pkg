@@ -29,6 +29,7 @@ jobs:
 
       - name: 'Install required packages'
         run: |
+          set -eux
           until sudo apt-get update
           do
             sleep 1
@@ -37,6 +38,7 @@ jobs:
 
       - name: 'Insert environment variables'
         run: |
+          set -eux
           echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)" >> $GITHUB_ENV
           echo REPO_OWNER="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f1)" >> $GITHUB_ENV
           echo REPO_NAME="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f2)" >> $GITHUB_ENV
@@ -50,6 +52,7 @@ jobs:
 
       - name: 'Confirm GPG Key is loaded'
         run: |
+          set -eux
           gpg --list-keys
           echo "${{ steps.import_gpg.outputs.fingerprint }}"
 
@@ -63,14 +66,23 @@ jobs:
           destination: ./_site
 
       - name: 'Set permissions on the _site directory'
-        run: sudo chown -R runner:docker _site
+        run: |
+          set -eux
+          sudo chown -R runner:docker _site
 
       - name: 'Download latest release .deb files'
+        env:
+          JENKINS_SERVER: ${{ secrets.JENKINS_SERVER }}
+          JENKINS_USERNAME: ${{ secrets.JENKINS_USERNAME }}
+          JENKINS_API_KEY: ${{ secrets.JENKINS_API_KEY }}
         run: |
+          set -eux
+          pip3 install python-jenkins
           python3 .github/scripts/get_debs.py
 
       - name: 'Build .deb repository'
         run: |
+          set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
           .github/scripts/build_repo.sh
