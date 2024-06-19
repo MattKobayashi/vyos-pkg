@@ -6,7 +6,10 @@ on:
 
 jobs:
   aws-gateway-load-balancer-tunnel-handler:
-    name: 'aws-gateway-load-balancer-tunnel-handler'
     permissions:
       contents: write
     uses: ./.github/workflows/aws-gateway-load-balancer-tunnel-handler.yaml
+  ddclient:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/ddclient.yaml

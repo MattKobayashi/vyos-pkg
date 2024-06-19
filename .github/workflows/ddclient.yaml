@@ -1,0 +1,53 @@
+---
+name: 'Build package'
+
+on:
+  workflow_call:
+
+jobs:
+  build-package:
+    name: 'Build package'
+    runs-on: self-hosted
+    steps:
+      - name: 'Install build dependencies'
+        run: |
+          apt-get install --yes debmake build-essential cmake
+      - name: 'Checkout the `vyos-pkg` repository'
+        uses: actions/checkout@v4
+        with:
+          repository: 'MattKobayashi/vyos-pkg'
+          ref: 'current'
+          path: 'vyos-pkg'
+      - name: 'Checkout the `vyos-build` repository'
+        uses: actions/checkout@v4
+        with:
+          repository: 'vyos/vyos-build'
+          ref: 'current'
+          path: 'vyos-build'
+      - name: 'Get build info'
+        id: build-info
+        working-directory: vyos-build/packages/ddclient
+        run: |
+          set -eux
+          echo commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '2p') >> "$GITHUB_OUTPUT"
+          echo timestamp=$(date '+%Y%m%d%H%M%S') >> "$GITHUB_OUTPUT"
+      - name: 'Checkout the upstream repository (debian)'
+        run: |
+          set -eux
+          git clone https://github.com/ddclient/ddclient/tree/${{ steps.build-info.outputs.commit-id }} ddclient-github
+      - name: 'Build the .deb files'
+        working-directory: vyos-build/packages/ddclient
+        run: |
+          set -eux
+          ./build.sh
+      - name: 'Commit the .deb files to the `vyos-pkg` repository'
+        working-directory: vyos-pkg
+        run: |
+          set -eux
+          find packages/ -name 'ddclient*.deb' -delete
+          mv ../vyos-build/packages/ddclient/*.deb packages/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*
+          git commit -m "ddclient"
+          git push
