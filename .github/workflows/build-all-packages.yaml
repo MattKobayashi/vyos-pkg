@@ -1,0 +1,12 @@
+---
+name: 'Build unofficial VyOS .deb packages'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  aws-gateway-load-balancer-tunnel-handler:
+    name: 'aws-gateway-load-balancer-tunnel-handler'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/aws-gateway-load-balancer-tunnel-handler.yaml

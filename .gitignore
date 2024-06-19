@@ -1,4 +1,3 @@
-*.deb
 poetry.lock
 pyproject.toml
 *.tar.gz

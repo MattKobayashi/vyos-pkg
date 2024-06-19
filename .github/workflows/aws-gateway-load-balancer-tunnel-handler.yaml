@@ -1,0 +1,56 @@
+---
+name: 'Build package'
+
+on:
+  workflow_call:
+
+jobs:
+  build-package:
+    name: 'Build package'
+    runs-on: self-hosted
+    steps:
+      - name: 'Install build dependencies'
+        run: |
+          apt-get install --yes debmake build-essential cmake
+      - name: 'Checkout the `vyos-pkg` repository'
+        uses: actions/checkout@v4
+        with:
+          repository: 'MattKobayashi/vyos-pkg'
+          ref: 'current'
+          path: 'vyos-pkg'
+      - name: 'Checkout the `vyos-build` repository'
+        uses: actions/checkout@v4
+        with:
+          repository: 'vyos/vyos-build'
+          ref: 'current'
+          path: 'vyos-build'
+      - name: 'Get build info'
+        id: build-info
+        working-directory: vyos-build/packages/aws-gateway-load-balancer-tunnel-handler
+        run: |
+          set -eux
+          echo short-commit-id=$(sed -En "s/def commit_id = '(.*)'/\1/p" Jenkinsfile) >> "$GITHUB_OUTPUT"
+          echo commit-id=$(curl -sLH "Accept: application/vnd.github.sha" https://api.github.com/repos/aws-samples/aws-gateway-load-balancer-tunnel-handler/commits/f78058a) >> "$GITHUB_OUTPUT"
+          echo timestamp=$(date '+%Y%m%d%H%M%S') >> "$GITHUB_OUTPUT"
+      - name: 'Checkout the upstream repository'
+        uses: actions/checkout@v4
+        with:
+          repository: 'aws-samples/aws-gateway-load-balancer-tunnel-handler'
+          ref: ${{ steps.build-info.outputs.commit-id }}
+          path: vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/aws-gwlbtun-${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
+      - name: 'Build the .deb files'
+        working-directory: vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/aws-gwlbtun-${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
+        run: |
+          set -eux
+          ../build.py --package aws-gwlbtun --version ${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
+      - name: 'Commit the .deb files to the `vyos-pkg` repository'
+        working-directory: vyos-pkg
+        run: |
+          set -eux
+          find packages/ -name 'aws-gwlbtun*.deb' -delete
+          mv ../vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/*.deb packages/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*
+          git commit -m "aws-gateway-load-balancer-tunnel-handler"
+          git push
