@@ -8,33 +8,48 @@ jobs:
   build-package:
     name: 'Build package'
     runs-on: self-hosted
+    container:
+      image: vyos/vyos-build:current
+      env:
+        TZ: Australia/Brisbane
+      options: '--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0'
     steps:
-      - name: 'Install build dependencies'
-        run: |
-          apt-get install --yes debmake build-essential cmake
       - name: 'Checkout the `vyos-pkg` repository'
-        uses: actions/checkout@v4
-        with:
-          repository: 'MattKobayashi/vyos-pkg'
-          ref: 'current'
-          path: 'vyos-pkg'
+        run: |
+          set -eux
+          rm -rf vyos-pkg/
+          git clone --depth 1 https://github.com/MattKobayashi/vyos-pkg.git
       - name: 'Checkout the `vyos-build` repository'
-        uses: actions/checkout@v4
-        with:
-          repository: 'vyos/vyos-build'
-          ref: 'current'
-          path: 'vyos-build'
-      - name: 'Get build info'
-        id: build-info
+        run: |
+          set -eux
+          rm -rf vyos-build/
+          git clone --depth 1 https://github.com/vyos/vyos-build.git
+      - name: 'Get build info (debian)'
+        id: build-info-debian
+        working-directory: vyos-build/packages/ddclient
+        run: |
+          set -eux
+          echo commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '1p') >> "$GITHUB_OUTPUT"
+      - name: 'Checkout the upstream repository (debian)'
+        working-directory: vyos-build/packages/ddclient
+        run: |
+          set -eux
+          git clone https://salsa.debian.org/debian/ddclient.git ddclient-debian
+          cd ddclient-debian
+          git reset --hard ${{ steps.build-info-debian.outputs.commit-id }}
+      - name: 'Get build info (github)'
+        id: build-info-github
         working-directory: vyos-build/packages/ddclient
         run: |
           set -eux
           echo commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '2p') >> "$GITHUB_OUTPUT"
-          echo timestamp=$(date '+%Y%m%d%H%M%S') >> "$GITHUB_OUTPUT"
-      - name: 'Checkout the upstream repository (debian)'
+      - name: 'Checkout the upstream repository (github)'
+        working-directory: vyos-build/packages/ddclient
         run: |
           set -eux
-          git clone https://github.com/ddclient/ddclient/tree/${{ steps.build-info.outputs.commit-id }} ddclient-github
+          git clone https://github.com/ddclient/ddclient.git ddclient-github
+          cd ddclient-github
+          git reset --hard ${{ steps.build-info-github.outputs.commit-id }}
       - name: 'Build the .deb files'
         working-directory: vyos-build/packages/ddclient
         run: |
@@ -50,4 +65,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add packages/*
           git commit -m "ddclient"
-          git push
+          git push -u https://MattKobayashi:${{ secrets.GITHUB_TOKEN }}@github.com/MattKobayashi/vyos-pkg.git
