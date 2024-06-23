@@ -13,3 +13,7 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/ddclient.yaml
+  dropbear:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/dropbear.yaml
