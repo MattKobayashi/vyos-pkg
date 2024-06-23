@@ -59,7 +59,7 @@ jobs:
         working-directory: vyos-pkg
         run: |
           set -eux
-          find packages/ -name 'ddclient*.deb' -delete
+          find packages/ -name 'ddclient*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/ddclient/*.deb packages/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

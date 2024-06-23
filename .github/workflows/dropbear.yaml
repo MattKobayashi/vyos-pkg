@@ -48,7 +48,7 @@ jobs:
         working-directory: vyos-pkg
         run: |
           set -eux
-          find packages/ -name 'dropbear*.deb' -delete
+          find packages/ -name 'dropbear*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/dropbear/*.deb packages/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
