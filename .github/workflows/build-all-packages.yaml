@@ -1,5 +1,5 @@
 ---
-name: 'Build unofficial VyOS .deb packages'
+name: 'Build unofficial VyOS .deb packages (`current`)'
 
 on:
   workflow_dispatch:
@@ -8,12 +8,16 @@ jobs:
   aws-gateway-load-balancer-tunnel-handler:
     permissions:
       contents: write
-    uses: ./.github/workflows/aws-gateway-load-balancer-tunnel-handler.yaml
+    uses: ./.github/workflows/current-aws-gateway-load-balancer-tunnel-handler.yaml
   ddclient:
     permissions:
       contents: write
-    uses: ./.github/workflows/ddclient.yaml
+    uses: ./.github/workflows/current-ddclient.yaml
   dropbear:
     permissions:
       contents: write
-    uses: ./.github/workflows/dropbear.yaml
+    uses: ./.github/workflows/current-dropbear.yaml
+  ethtool:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-ethtool.yaml
