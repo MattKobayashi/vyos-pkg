@@ -1,0 +1,81 @@
+---
+name: 'Build package'
+
+on:
+  workflow_call:
+
+jobs:
+  build-package:
+    name: 'Build package'
+    runs-on: self-hosted
+    container:
+      image: vyos/vyos-build:current
+      env:
+        TZ: Australia/Brisbane
+      options: '--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0'
+    steps:
+      - name: 'Checkout the `vyos-pkg` repository'
+        run: |
+          set -eux
+          rm -rf vyos-pkg/
+          git clone --depth 1 https://github.com/MattKobayashi/vyos-pkg.git
+      - name: 'Checkout the `vyos-build` repository'
+        run: |
+          set -eux
+          rm -rf vyos-build/
+          git clone --depth 1 https://github.com/vyos/vyos-build.git
+      - name: 'Get build info'
+        id: build-info
+        working-directory: vyos-build/packages/frr
+        run: |
+          set -eux
+          echo libyang-commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '1p') >> "$GITHUB_OUTPUT"
+          echo rtrlib-commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '2p') >> "$GITHUB_OUTPUT"
+          echo frr-commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '3p') >> "$GITHUB_OUTPUT"
+      - name: 'Checkout the upstream repositories'
+        working-directory: vyos-build/packages/frr
+        run: |
+          set -eux
+          git clone https://github.com/CESNET/libyang.git libyang
+          cd libyang
+          git reset --hard ${{ steps.build-info.outputs.libyang-commit-id }}
+          cd ..
+          git clone https://github.com/rtrlib/rtrlib.git rtrlib
+          cd rtrlib
+          git reset --hard ${{ steps.build-info.outputs.rtrlib-commit-id }}
+          cd ..
+          git clone https://github.com/FRRouting/frr.git frr
+          cd frr
+          git reset --hard ${{ steps.build-info.outputs.frr-commit-id }}
+      - name: 'Build the .deb files (libyang)'
+        working-directory: vyos-build/packages/frr/libyang
+        run: |
+          set -eux
+          pipx run apkg build -i 
+          find pkg/pkgs -type f -name *.deb -exec mv -t .. {} +
+      - name: 'Build the .deb files (rtrlib)'
+        working-directory: vyos-build/packages/frr/rtrlib
+        run: |
+          set -eux
+          sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends"
+          dpkg-buildpackage -uc -us -tc -b
+      - name: 'Build the .deb files (frr)'
+        working-directory: vyos-build/packages/frr/frr
+        run: |
+          set -eux
+          sudo dpkg -i ../*.deb; sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends"
+          cd ..
+          ./build-frr.sh
+      - name: 'Commit the .deb files to the `vyos-pkg` repository'
+        working-directory: vyos-pkg
+        run: |
+          set -eux
+          find packages/ -name 'libyang*.deb' -exec git rm {} \;
+          find packages/ -name 'rtrlib*.deb' -exec git rm {} \;
+          find packages/ -name 'frr*.deb' -exec git rm {} \;
+          mv ../vyos-build/packages/frr/*.deb packages/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/*
+          git commit -m "frr"
+          git push -u https://MattKobayashi:${{ secrets.GITHUB_TOKEN }}@github.com/MattKobayashi/vyos-pkg.git

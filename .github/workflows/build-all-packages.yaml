@@ -21,3 +21,7 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/current-ethtool.yaml
+  frr:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-frr.yaml
