@@ -38,15 +38,15 @@ jobs:
           set -eux
           git clone https://github.com/CESNET/libyang.git libyang
           cd libyang
-          git reset --hard ${{ steps.build-info.outputs.libyang-commit-id }}
+          git checkout ${{ steps.build-info.outputs.libyang-commit-id }}
           cd ..
           git clone https://github.com/rtrlib/rtrlib.git rtrlib
           cd rtrlib
-          git reset --hard ${{ steps.build-info.outputs.rtrlib-commit-id }}
+          git checkout ${{ steps.build-info.outputs.rtrlib-commit-id }}
           cd ..
           git clone https://github.com/FRRouting/frr.git frr
           cd frr
-          git reset --hard ${{ steps.build-info.outputs.frr-commit-id }}
+          git checkout ${{ steps.build-info.outputs.frr-commit-id }}
       - name: 'Build the .deb files (libyang)'
         working-directory: vyos-build/packages/frr/libyang
         run: |
@@ -71,8 +71,9 @@ jobs:
         run: |
           set -eux
           find packages/ -name 'libyang*.deb' -exec git rm {} \;
-          find packages/ -name 'rtrlib*.deb' -exec git rm {} \;
+          find packages/ -name 'librtr*.deb' -exec git rm {} \;
           find packages/ -name 'frr*.deb' -exec git rm {} \;
+          find packages/ -name 'rtr-tools*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/frr/*.deb packages/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

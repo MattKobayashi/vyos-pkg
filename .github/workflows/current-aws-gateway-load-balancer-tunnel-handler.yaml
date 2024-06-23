@@ -37,7 +37,7 @@ jobs:
           set -eux
           git clone https://github.com/aws-samples/aws-gateway-load-balancer-tunnel-handler.git vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/aws-gwlbtun-${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
           cd vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/aws-gwlbtun-${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
-          git reset --hard ${{ steps.build-info.outputs.commit-id }}
+          git checkout ${{ steps.build-info.outputs.commit-id }}
       - name: 'Build the .deb files'
         working-directory: vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/aws-gwlbtun-${{ steps.build-info.outputs.timestamp }}-${{ steps.build-info.outputs.short-commit-id }}
         run: |

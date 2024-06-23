@@ -36,7 +36,7 @@ jobs:
           set -eux
           git clone https://salsa.debian.org/kernel-team/ethtool.git ethtool
           cd ethtool
-          git reset --hard ${{ steps.build-info.outputs.commit-id }}
+          git checkout ${{ steps.build-info.outputs.commit-id }}
       - name: 'Build the .deb files'
         working-directory: vyos-build/packages/ethtool/ethtool
         run: |

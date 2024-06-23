@@ -36,7 +36,7 @@ jobs:
           set -eux
           git clone https://salsa.debian.org/debian/dropbear.git dropbear
           cd dropbear
-          git reset --hard ${{ steps.build-info.outputs.commit-id }}
+          git checkout ${{ steps.build-info.outputs.commit-id }}
       - name: 'Build the .deb files'
         working-directory: vyos-build/packages/dropbear/dropbear
         run: |
