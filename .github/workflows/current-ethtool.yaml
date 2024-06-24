@@ -24,31 +24,18 @@ jobs:
           set -eux
           rm -rf vyos-build/
           git clone --depth 1 https://github.com/vyos/vyos-build.git
-      - name: 'Get build info'
-        id: build-info
+      - name: 'Execute parse_jf.py'
         working-directory: vyos-build/packages/ethtool
         run: |
           set -eux
-          echo commit-id=$(awk -F "[\'-,:; ]+" '/scmCommit/ { print $3 }' Jenkinsfile | sed -En '1p') >> "$GITHUB_OUTPUT"
-      - name: 'Checkout the upstream repository'
-        working-directory: vyos-build/packages/ethtool
-        run: |
-          set -eux
-          git clone https://salsa.debian.org/kernel-team/ethtool.git ethtool
-          cd ethtool
-          git checkout ${{ steps.build-info.outputs.commit-id }}
-      - name: 'Build the .deb files'
-        working-directory: vyos-build/packages/ethtool/ethtool
-        run: |
-          set -eux
-          sudo mk-build-deps --install --tool "apt-get --yes --no-install-recommends"
-          dpkg-buildpackage -uc -us -tc -b
+          pip3 install --break-system-packages json-repair
+          python3 ../../../vyos-pkg/.github/scripts/parse_jf.py
       - name: 'Commit the .deb files to the `vyos-pkg` repository'
         working-directory: vyos-pkg
         run: |
           set -eux
           find packages/ -name 'ethtool*.deb' -exec git rm {} \;
-          mv ../vyos-build/packages/ethtool/*.deb packages/
+          mv ../vyos-build/packages/ethtool/*.deb packages/current/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add packages/*
