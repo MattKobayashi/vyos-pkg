@@ -9,23 +9,35 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/current-aws-gateway-load-balancer-tunnel-handler.yaml
+    with:
+      job-name: aws-gateway-load-balancer-tunnel-handler
   ddclient:
     permissions:
       contents: write
     uses: ./.github/workflows/current-ddclient.yaml
+    with:
+      job-name: ddclient
   dropbear:
     permissions:
       contents: write
     uses: ./.github/workflows/current-dropbear.yaml
+    with:
+      job-name: dropbear
   ethtool:
     permissions:
       contents: write
     uses: ./.github/workflows/current-ethtool.yaml
+    with:
+      job-name: ethtool
   frr:
     permissions:
       contents: write
     uses: ./.github/workflows/current-frr.yaml
+    with:
+      job-name: frr
   hostap:
     permissions:
       contents: write
     uses: ./.github/workflows/current-hostap.yaml
+    with:
+      job-name: hostap
