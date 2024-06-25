@@ -25,3 +25,7 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/current-frr.yaml
+  hostap:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-hostap.yaml
