@@ -34,10 +34,10 @@ jobs:
         working-directory: vyos-pkg
         run: |
           set -eux
-          find packages/ -name 'libyang*.deb' -exec git rm {} \;
-          find packages/ -name 'librtr*.deb' -exec git rm {} \;
-          find packages/ -name 'frr*.deb' -exec git rm {} \;
-          find packages/ -name 'rtr-tools*.deb' -exec git rm {} \;
+          find packages/current/ -name 'libyang*.deb' -exec git rm {} \;
+          find packages/current/ -name 'librtr*.deb' -exec git rm {} \;
+          find packages/current/ -name 'frr*.deb' -exec git rm {} \;
+          find packages/current/ -name 'rtr-tools*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/frr/*.deb packages/current/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

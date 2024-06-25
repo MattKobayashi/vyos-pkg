@@ -34,7 +34,7 @@ jobs:
         working-directory: vyos-pkg
         run: |
           set -eux
-          find packages/ -name 'ethtool*.deb' -exec git rm {} \;
+          find packages/current/ -name 'ethtool*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/ethtool/*.deb packages/current/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

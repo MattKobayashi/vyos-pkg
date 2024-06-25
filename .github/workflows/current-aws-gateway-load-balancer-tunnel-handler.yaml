@@ -34,7 +34,7 @@ jobs:
         working-directory: vyos-pkg
         run: |
           set -eux
-          find packages/ -name 'aws*.deb' -exec git rm {} \;
+          find packages/current/ -name 'aws*.deb' -exec git rm {} \;
           mv ../vyos-build/packages/aws-gateway-load-balancer-tunnel-handler/*.deb packages/current/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
