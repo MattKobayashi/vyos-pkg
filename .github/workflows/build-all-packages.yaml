@@ -41,3 +41,9 @@ jobs:
     uses: ./.github/workflows/current-hostap.yaml
     with:
       job-name: hostap
+  hsflowd:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-hsflowd.yaml
+    with:
+      job-name: hsflowd
