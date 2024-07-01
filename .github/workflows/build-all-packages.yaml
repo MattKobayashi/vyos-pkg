@@ -47,3 +47,9 @@ jobs:
     uses: ./.github/workflows/current-hsflowd.yaml
     with:
       job-name: hsflowd
+  linux-kernel:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-linux-kernel.yaml
+    with:
+      job-name: linux-kernel
