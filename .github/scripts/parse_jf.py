@@ -51,10 +51,10 @@ def getBuildCmds(pkglist) -> list:
                     )
             # Split build commands
             commands = re.split('&&|;(?! then)', package['buildCmd'])
-            # Remove instances of 'cd ..'
-            commands = [command for command in commands if 'cd ..' not in command]
             # Strip whitespace
             commands = [command.strip() for command in commands]
+            # Remove comments
+            commands = [command for command in commands if not command.startswith('#')]
             return commands
     else:
         # Handle Linux kernel build
@@ -63,18 +63,12 @@ def getBuildCmds(pkglist) -> list:
             cmdlist = list(filter(None, cmdlist))
             cmd = ' &&'.join(cmdlist)
             pkglist['buildCmd'] = cmd
-            kernel_ver = dict(
-                os.environ, \
-                KERNEL_VER=subprocess.run(['cat ../../data/defaults.toml | tomlq -r .kernel_version'], shell=True, capture_output=True) \
-                .stdout.decode('utf-8') \
-                .rstrip()
-                )
         # Split build commands
         commands = re.split('&&|;(?! then)', pkglist['buildCmd'])
-        # Remove instances of 'cd ..'
-        commands = [command for command in commands if 'cd ..' not in command]
         # Strip whitespace
         commands = [command.strip() for command in commands]
+        # Remove comments
+        commands = [command for command in commands if not command.startswith('#')]
         return commands
 
 
@@ -85,33 +79,45 @@ with open('Jenkinsfile') as jenkinsfile:
 # Parse Jenkinsfile
 pkglist = parseJenkinsfile(content)
 
+# If it ain't a list, make it one
+if not isinstance(pkglist, list):
+    pkglist = [pkglist]
+
 # Main package loop
-if isinstance(pkglist, list):
-    for package in pkglist:
-        # Do `git clone` and `git checkout` things
-        if 'scmUrl' in package:
-            subprocess.run(['git', 'clone', package['scmUrl'], package['name']])
-            subprocess.run(['git', 'checkout', package['scmCommit']], cwd=package['name'])
-        # Get build commands
-        commands = getBuildCmds(package)
-        # Run each build command
-        for command in commands:
-            if 'kernel' in package['name']:
-                subprocess.run(command, shell=True, env=kernel_ver)
-                continue
-            else:
-                subprocess.run(command, shell=True, cwd=package['name'])
-else:
+for package in pkglist:
     # Do `git clone` and `git checkout` things
-    if 'scmUrl' in pkglist:
-        subprocess.run(['git', 'clone', pkglist['scmUrl'], pkglist['name']])
-        subprocess.run(['git', 'checkout', pkglist['scmCommit']], cwd=pkglist['name'])
+    if 'scmUrl' in package:
+        subprocess.run(['git', 'clone', package['scmUrl'], package['name']])
+        subprocess.run(['git', 'checkout', package['scmCommit']], cwd=package['name'])
     # Get build commands
-    commands = getBuildCmds(pkglist)
+    commands = getBuildCmds(package)
     # Run each build command
-    for command in commands:
-        if 'kernel' in pkglist['name']:
-            subprocess.run(command, shell=True, env=kernel_ver)
-            continue
-        else:
-            subprocess.run(command, shell=True, cwd=pkglist['name'])
+    if 'linux-kernel' in os.getcwd():
+        kernel_ver = dict(
+            os.environ, \
+            KERNEL_VER=subprocess.run(
+                ['cat ../../data/defaults.toml | tomlq -r .kernel_version'],
+                shell=True, capture_output=True
+                ) \
+            .stdout.decode('utf-8') \
+            .rstrip()
+            )
+        # Remove flow control
+        for index, command in enumerate(commands):
+            if command in ['if { $? -ne 0 }; then', 'exit 1', 'fi']:
+                commands.pop(index)
+        # commands = '''
+        # gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
+        # curl -OL https://www.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VER}.tar.xz
+        # curl -OL https://www.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VER}.tar.sign
+        # xz -cd linux-${KERNEL_VER}.tar.xz | gpg2 --verify linux-${KERNEL_VER}.tar.sign -
+        # if [ $? -ne 0 ]; then
+        #     exit 1
+        # fi
+        # tar xf linux-${KERNEL_VER}.tar.xz
+        # ln -s linux-${KERNEL_VER} linux
+        # ./build-kernel.sh
+        # '''
+        subprocess.run('; '.join(commands), shell=True, env=kernel_ver)
+    else:
+        subprocess.run('; '.join(commands), shell=True, cwd=package['name'])
