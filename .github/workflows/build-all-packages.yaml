@@ -47,6 +47,12 @@ jobs:
     uses: ./.github/workflows/current-hsflowd.yaml
     with:
       job-name: hsflowd
+  isc-dhcp:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/current-isc-dhcp.yaml
+    with:
+      job-name: isc-dhcp
   linux-kernel:
     permissions:
       contents: write
