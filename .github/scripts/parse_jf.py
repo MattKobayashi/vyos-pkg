@@ -30,6 +30,14 @@ def parseJenkinsfile(content: str) -> list:
                         .removesuffix('\'')
         pkglist_raw = pkglist_raw.replace('${commit_id}', commit_id)
         pkglist_raw = pkglist_raw.replace('commit_id', commit_id)
+    # Replace package_name placeholder if it exists
+    if 'def package_name = ' in content:
+        package_name = re.search(r'def package_name = \'.*\'', content, re.DOTALL) \
+                        .group() \
+                        .removeprefix('def package_name = \'') \
+                        .removesuffix('\'')
+        pkglist_raw = pkglist_raw.replace('${package_name}', package_name)
+        pkglist_raw = pkglist_raw.replace('package_name', package_name)
     # Convert pkglist_raw to JSON
     pkglist = json_repair.loads(pkglist_raw)
     return pkglist
