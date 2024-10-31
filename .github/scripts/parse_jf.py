@@ -6,6 +6,7 @@ import re
 import subprocess
 import json_repair
 import tomllib
+import logging
 
 
 def parse_jenkinsfile(content: str) -> list:
@@ -36,7 +37,11 @@ def parse_jenkinsfile(content: str) -> list:
         >>> parse_jenkinsfile(content)
         ['package-20230615123456-abc1234']
     """
-    pkglist_raw = re.search(r"def pkgList = \[\n.*?\n\]", content, re.DOTALL).group()
+    try:
+        pkglist_raw = re.search(r"def pkgList = \[\n.*?\n\]", content, re.DOTALL).group()
+    except AttributeError as e:
+        logging.error("pkgList definition not found in Jenkinsfile.")
+        raise e
     pkglist_raw = (
         pkglist_raw.removeprefix("def pkgList = ")
         .replace("[", "{")
@@ -119,8 +124,13 @@ def main():
          FileNotFoundError: If Jenkinsfile or defaults.toml (for kernel builds) cannot be found
          subprocess.CalledProcessError: If a git or build command fails (suppressed by check=False)
     """
-    with open("Jenkinsfile", encoding="utf-8") as jenkinsfile:
-        content = jenkinsfile.read()
+    logging.basicConfig(level=logging.INFO)
+    try:
+        with open("Jenkinsfile", encoding="utf-8") as jenkinsfile:
+            content = jenkinsfile.read()
+    except FileNotFoundError:
+        logging.error("Jenkinsfile not found.")
+        return
 
     pkglist = parse_jenkinsfile(content)
 
