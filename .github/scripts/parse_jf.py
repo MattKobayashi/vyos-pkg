@@ -8,90 +8,71 @@ import os
 import tomllib
 
 
-def parseJenkinsfile(content: str) -> list:
-    # Initialise the pkglist_raw string
-    pkglist_raw = re.search(r'def pkgList = \[\n.*?\n\]', content, re.DOTALL) \
-                .group() \
-                .removeprefix('def pkgList = ')
-    # Other replacements
-    pkglist_raw = pkglist_raw.replace('[', '{')
-    pkglist_raw = pkglist_raw.replace(']', '}')
-    pkglist_raw = pkglist_raw.replace('// ', '# ')
-    pkglist_raw = pkglist_raw.replace("'''", "'")
-    # Replace timestamp placeholder if it exists
-    if 'def timestamp = ' in content:
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        pkglist_raw = pkglist_raw.replace('${timestamp}', timestamp)
-    # Replace commit_id placeholder if it exists
-    if 'def commit_id = ' in content:
-        commit_id = re.search(r'def commit_id = \'[0-9a-fA-F]{7}\'', content, re.DOTALL) \
-                        .group() \
-                        .removeprefix('def commit_id = \'') \
-                        .removesuffix('\'')
-        pkglist_raw = pkglist_raw.replace('${commit_id}', commit_id)
-        pkglist_raw = pkglist_raw.replace('commit_id', commit_id)
-    # Replace package_name placeholder if it exists
-    if 'def package_name = ' in content:
-        package_name = re.search(r'def package_name = \'.*\'', content, re.DOTALL) \
-                        .group() \
-                        .removeprefix('def package_name = \'') \
-                        .removesuffix('\'')
-        pkglist_raw = pkglist_raw.replace('${package_name}', package_name)
-        pkglist_raw = pkglist_raw.replace('package_name', package_name)
-    # Convert pkglist_raw to JSON
-    pkglist = json_repair.loads(pkglist_raw)
-    return pkglist
+def parse_jenkinsfile(content: str) -> list:
+    pkglist_raw = re.search(r'def pkgList = \[\n.*?\n\]', content, re.DOTALL).group()
+    pkglist_raw = (pkglist_raw
+                   .removeprefix('def pkgList = ')
+                   .replace('[', '{')
+                   .replace(']', '}')
+                   .replace('// ', '# ')
+                   .replace("'''", "'"))
+
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    commit_id = re.search(r'def commit_id = \'[0-9a-fA-F]{7}\'', content)
+    package_name = re.search(r'def package_name = \'.*\'', content)
+
+    replacements = {
+        '${timestamp}': timestamp,
+        '${commit_id}': commit_id.group().removeprefix('def commit_id = \'').removesuffix('\'') if commit_id else '',
+        '${package_name}': package_name.group().removeprefix('def package_name = \'').removesuffix('\'') if package_name else '',
+    }
+
+    for placeholder, value in replacements.items():
+        pkglist_raw = pkglist_raw.replace(placeholder, value)
+
+    return json_repair.loads(pkglist_raw)
 
 
-def getBuildCmds(pkglist) -> list:
+def get_build_cmds(pkglist) -> list:
     if not isinstance(pkglist, list):
         pkglist = [pkglist]
+    build_cmds = []
+
     for package in pkglist:
-        # Handle Linux kernel build
         if '\n' in package['buildCmd']:
-            cmdlist = package['buildCmd'].split('\n')
-            cmdlist = list(filter(None, cmdlist))
-            cmd = ' &&'.join(cmdlist)
-            package['buildCmd'] = cmd
-        # Split build commands
-        commands = re.split('&&|;(?! then)', package['buildCmd'])
-        # Strip whitespace
-        commands = [command.strip() for command in commands]
-        # Remove comments
-        commands = [command for command in commands if not command.startswith('#')]
-        return commands
+            package['buildCmd'] = ' &&'.join(filter(None, package['buildCmd'].split('\n')))
+        
+        commands = [cmd.strip() for cmd in re.split('&&|;(?! then)', package['buildCmd'])]
+        build_cmds += [cmd for cmd in commands if not cmd.startswith('#')]
+        
+    return build_cmds
 
 
-# Read Jenkinsfile
-with open('Jenkinsfile') as jenkinsfile:
-    content = jenkinsfile.read()
+def main():
+    with open('Jenkinsfile') as jenkinsfile:
+        content = jenkinsfile.read()
 
-# Parse Jenkinsfile
-pkglist = parseJenkinsfile(content)
+    pkglist = parse_jenkinsfile(content)
 
-# If it ain't a list, make it one
-if not isinstance(pkglist, list):
-    pkglist = [pkglist]
+    if not isinstance(pkglist, list):
+        pkglist = [pkglist]
 
-# Main package loop
-for package in pkglist:
-    # Do `git clone` and `git checkout` things
-    if 'scmUrl' in package:
-        subprocess.run(['git', 'clone', package['scmUrl'], package['name']])
-        subprocess.run(['git', 'checkout', package['scmCommit']], cwd=package['name'])
-    # Get build commands
-    commands = getBuildCmds(package)
-    # Run each build command
-    if 'linux-kernel' in os.getcwd():
-        # Extract kernel version from defaults.toml
-        with open('../../data/defaults.toml', 'rb') as f:
-            defaults_toml = tomllib.load(f)
-        kernel_version = defaults_toml['kernel_version']
-        # Remove flow control
-        for index, command in enumerate(commands):
-            commands[index] = re.sub(r'\${KERNEL_VER}', kernel_version, command)
-            if command in ['if { $? -ne 0 }; then', 'exit 1', 'fi']:
-                commands.pop(index)
-        subprocess.run('; '.join(commands), shell=True)
-    else:
-        subprocess.run('; '.join(commands), shell=True, cwd=package['name'])
+    for package in pkglist:
+        if 'scmUrl' in package:
+            subprocess.run(['git', 'clone', package['scmUrl'], package['name']])
+            subprocess.run(['git', 'checkout', package['scmCommit']], cwd=package['name'])
+
+        commands = get_build_cmds(package)
+
+        if 'linux-kernel' in os.getcwd():
+            with open('../../data/defaults.toml', 'rb') as f:
+                kernel_version = tomllib.load(f)['kernel_version']
+
+            commands = [re.sub(r'\${KERNEL_VER}', kernel_version, cmd) for cmd in commands]
+            commands = [cmd for cmd in commands if cmd not in ['if { $? -ne 0 }; then', 'exit 1', 'fi']]
+
+        subprocess.run('; '.join(commands), shell=True, cwd=package.get('name', '.'))
+
+
+if __name__ == "__main__":
+    main()
