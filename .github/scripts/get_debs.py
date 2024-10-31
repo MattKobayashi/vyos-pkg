@@ -2,6 +2,8 @@
 
 import os
 import jenkins
+from pathlib import Path
+import logging
 
 jenkins_url = os.environ.get("JENKINS_SERVER")
 
@@ -21,16 +23,20 @@ def download_artifacts(jenkins_job_name, release_branch, build_number):
         release_branch (str): Release train name used in the path structure (e.g. 'current', 'equuleus')
         build_number (int): Build number of the last successful Jenkins build
     """
-    artifacts = server.get_build_info(jenkins_job_name, build_number)["artifacts"]
-    for artifact in artifacts:
-        artifact_data = server.get_build_artifact_as_bytes(jenkins_job_name, build_number, artifact["relativePath"])
-        artifact_path = f'./_site/{release_branch}/deb/pool/main/{artifact["fileName"]}'
-        with open(artifact_path, "wb") as artifact_file:
-            artifact_file.write(artifact_data)
+    try:
+        artifacts = server.get_build_info(jenkins_job_name, build_number)["artifacts"]
+        for artifact in artifacts:
+            artifact_data = server.get_build_artifact_as_bytes(jenkins_job_name, build_number, artifact["relativePath"])
+            artifact_path = Path(f'./_site/{release_branch}/deb/pool/main/') / artifact["fileName"]
+            artifact_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(artifact_path, "wb") as artifact_file:
+                artifact_file.write(artifact_data)
+    except Exception as e:
+        logging.error(f"Failed to download artifact {artifact['fileName']}: {e}")
+        raise e
 
 
 for release_train in releases:
-    os.makedirs(f"./_site/{release_train}/deb/pool/main/", exist_ok=True)
     for folder in root_jobs:
         if folder["name"] == f"vyos-{release_train}":
             for job in folder["jobs"]:
@@ -40,3 +46,6 @@ for release_train in releases:
                     download_artifacts(full_job_path, release_train, last_successful_build)
                 except TypeError:
                     pass
+                except Exception as e:
+                    print(f"Error downloading artifacts for {full_job_path}: {e}")
+                    continue
