@@ -6,17 +6,50 @@ set -euo pipefail
 
 # Constants
 readonly SITE_DIR="_site"
-readonly SUPPORTED_BRANCHES=("equuleus" "sagitta" "current")
+readonly SUPPORTED_BRANCHES=("current")
 readonly DEB_COMPONENTS="${COMPONENTS:-main}"
-readonly GPG_TTY=""
+readonly SOURCE_DIR="${SOURCE_DIR:-/vyos-build/scripts/package-build}"
+readonly GPG_TTY=$(tty)
+
+# Check required environment variables
+check_env_vars() {
+    local required_vars=("REPO_OWNER")
+    for var in "${required_vars[@]}"; do
+        if [[ -z "${!var:-}" ]]; then
+            echo "Error: Required environment variable $var is not set"
+            exit 1
+        fi
+    done
+}
 
 generate_hashes() {
     local hash_type="$1"
     local hash_command="$2"
+    
     echo "${hash_type}:"
-    find "${DEB_COMPONENTS}" -type f -printf "%P\n" | while read -r file; do
+    # Change to components directory before generating hashes
+    cd "${DEB_COMPONENTS}" || exit 1
+    find . -type f -printf "%P\n" | while read -r file; do
         echo " $(${hash_command} "$file" | cut -d" " -f1) $(wc -c "$file")"
     done
+    cd - >/dev/null || exit 1
+}
+
+copy_debs() {
+    local branch="$1"
+    local target_dir="$2"
+    local source_path="${SOURCE_DIR}/${branch}"
+
+    if [[ ! -d "${source_path}" ]]; then
+        echo "Warning: Source directory ${source_path} not found, skipping copy"
+        return 0
+    fi
+
+    echo "Copying .deb packages from ${source_path}..."
+    mkdir -p "${target_dir}"
+    if ! find "${source_path}" -name "*.deb" -type f -exec cp {} "${target_dir}/" \;; then
+        echo "Warning: No .deb packages found in ${source_path}"
+    fi
 }
 
 build_repo() {
@@ -25,18 +58,19 @@ build_repo() {
     # Define paths
     local deb_base="${SITE_DIR}/${branch}/deb"
     local deb_pool="${deb_base}/pool/${DEB_COMPONENTS}"
-    local deb_dists="dists/${branch}"
+    local deb_dists="${deb_base}/dists/${branch}"
     local deb_dists_components="${deb_dists}/${DEB_COMPONENTS}/binary-all"
     
     echo "Building repository for ${branch}..."
     
-    # Create repository structure
+    # Create repository structure and copy packages
     mkdir -p "${deb_base}/${deb_dists_components}"
+    copy_debs "${branch}" "${deb_pool}"
     
     # Generate package information
     pushd "${deb_base}" >/dev/null || exit 1
     echo "Scanning packages and creating Packages file..."
-    if ! dpkg-scanpackages pool/ > "${deb_dists_components}/Packages"; then
+    if ! dpkg-scanpackages pool/ > "${deb_dists_components}/Packages" 2>/dev/null; then
         echo "Error: Package scanning failed"
         exit 1
     fi
@@ -62,11 +96,17 @@ build_repo() {
         generate_hashes SHA1 sha1sum
         generate_hashes SHA256 sha256sum
     } > Release
-    
+
     echo "Signing Release file..."
     export GPG_TTY
-    gpg --detach-sign --armor --sign > Release.gpg < Release
-    gpg --detach-sign --armor --sign --clearsign > InRelease < Release
+    if ! gpg --detach-sign --armor --sign > Release.gpg < Release; then
+        echo "Error: GPG signing failed for Release.gpg"
+        exit 1
+    fi
+    if ! gpg --detach-sign --armor --sign --clearsign > InRelease < Release; then
+        echo "Error: GPG signing failed for InRelease"
+        exit 1
+    fi
     
     popd >/dev/null || exit 1
     popd >/dev/null || exit 1
@@ -74,13 +114,26 @@ build_repo() {
     echo "Repository built successfully for ${branch}"
 }
 
+cleanup() {
+    if [[ -n "${temp_dir:-}" ]]; then
+        rm -rf "$temp_dir"
+    fi
+}
+
 main() {
+    # Set up cleanup trap
+    trap cleanup EXIT
+
+    # Check environment variables
+    check_env_vars
+    
     # Verify required tools
     for cmd in dpkg-scanpackages gpg gzip bzip2; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
             echo "Error: Required command '$cmd' not found"
             exit 1
         fi
+    done
     
     # Build repositories for all branches
     for branch in "${SUPPORTED_BRANCHES[@]}"; do
