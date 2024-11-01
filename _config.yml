@@ -1,7 +1,8 @@
+---
 title: vyos-pkg
 email: matthew@kobayashi.au
 description: >-
-  An unofficial Debian package repository for VyOS-specific packages
+  An unofficial Debian package repository of VyOS packages
 url: https://mattkobayashi.github.io
 baseurl: /vyos-pkg/
 github_username: MattKobayashi
