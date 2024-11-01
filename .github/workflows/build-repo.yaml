@@ -62,11 +62,6 @@ jobs:
           set -eux
           mkdir -p packages/current/
           find ../vyos-build/scripts/package-build/ -name '*.deb' -exec cp {} packages/current/ \;
-      - name: Build the Debian repository
-        working-directory: vyos-pkg
-        run: |
-          set -eux
-          .github/scripts/build_repo.sh
       - name: Install required packages
         run: |
           set -eux
@@ -92,7 +87,7 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
-      - name: Confirm GPG Key is loaded
+      - name: Confirm GPG key is loaded
         run: |
           set -eux
           gpg --list-keys
