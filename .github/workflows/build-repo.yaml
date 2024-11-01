@@ -2,7 +2,7 @@
 name: "Build TBM VyOS Package Repository"
 
 on:
-  workflow_call:
+  workflow_dispatch:
 
 jobs:
   create-runner:
