@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create self-hosted runner
-        uses: MattKobayashi/tailscale-runner-action@v1.1.5
+        uses: MattKobayashi/tailscale-runner-action@v1.2.2
         with:
           gh-app-id: ${{ secrets.GH_APP_ID }}
           gh-app-login: MattKobayashi
