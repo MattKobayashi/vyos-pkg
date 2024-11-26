@@ -6,16 +6,15 @@ on:
 
 jobs:
   create-runner:
-    name: Create self-hosted runner
+    name: Create self-hosted Actions runner
     runs-on: ubuntu-latest
     steps:
-      - name: Create self-hosted runner
-        uses: MattKobayashi/tailscale-runner-action@v1.2.5
+      - name: Create runner
+        uses: MattKobayashi/tailscale-qemu-runner-action@v1.5.1
         with:
-          gh-app-id: ${{ secrets.GH_APP_ID }}
-          gh-app-login: MattKobayashi
-          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
-          runner-network: mattflix
+          gh-api-token: ${{ secrets.GH_API_TOKEN }}
+          gha-runner-apt-mirror: http://mirror.overthewire.com.au/ubuntu/
+          gha-runner-tz: Australia/Brisbane
           ssh-host: 100.102.37.118
           ssh-user: matthew
           ts-oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
