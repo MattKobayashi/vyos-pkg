@@ -5,62 +5,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  create-runner:
-    name: Create self-hosted Actions runner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create runner
-        uses: MattKobayashi/tailscale-qemu-runner-action@v1.7.0
-        with:
-          gh-api-token: ${{ secrets.GH_API_TOKEN }}
-          gha-runner-apt-mirror: http://mirror.overthewire.com.au/ubuntu/
-          gha-runner-tz: Australia/Brisbane
-          ssh-host: 100.102.37.118
-          ssh-user: matthew
-          ts-oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          ts-oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          ts-tag: ci
-  build-repo:
-    name: Build packages and repository
-    runs-on: self-hosted
+  build-packages:
     container:
-      image: vyos/vyos-build:current
       env:
         TZ: Australia/Brisbane
+      image: vyos/vyos-build:${{ matrix.branch }}
+    name: Build packages
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout the `vyos-pkg` repository
-        run: |
-          set -eux
-          rm -rf vyos-pkg/
-          git clone --depth 1 https://github.com/MattKobayashi/vyos-pkg.git
       - name: Checkout the `vyos-build` repository
-        run: |
-          set -eux
-          rm -rf vyos-build/
-          git clone --depth 1 https://github.com/vyos/vyos-build.git
+        uses: actions/checkout@v4.2.2
+        with:
+          path: vyos-build
+          ref: ${{ matrix.branch }}
+          repository: vyos/vyos-build
       - name: Build the packages
         working-directory: vyos-build/scripts/package-build
         run: |
           set -eux
-          for dir in */; do
-            if [ -f "${dir}build.py" ]; then
-              (cd "$dir" && ./build.py)
-            fi
-          done
-      # - name: "Remove old .deb files from the `vyos-pkg` repository"
-      #   working-directory: vyos-pkg
-      #   run: |
-      #     set -eux
-      #     find packages/current/ -name 'libyang*.deb' -exec git rm {} \;
-      #     find packages/current/ -name 'librtr*.deb' -exec git rm {} \;
-      #     find packages/current/ -name 'frr*.deb' -exec git rm {} \;
-      #     find packages/current/ -name 'rtr-tools*.deb' -exec git rm {} \;
-      - name: Copy the .deb files to the `vyos-pkg` repository
-        working-directory: vyos-pkg
-        run: |
-          set -eux
-          mkdir -p packages/current/
-          find ../vyos-build/scripts/package-build/ -name '*.deb' -exec cp {} packages/current/ \;
+          ./build.py
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: vyos-packages-${{ matrix.branch }}
+          path: vyos-build/scripts/package-build/*/*.deb
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - current
+  create-repo:
+    name: Create .deb repository
+    needs: build-packages
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout the `vyos-pkg` repository
+        uses: actions/checkout@v4.2.2
+      - name: Download the .deb file artifacts
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: vyos-packages-current
+          path: packages/current
       - name: Install required packages
         run: |
           set -eux
@@ -80,8 +65,8 @@ jobs:
           echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)" >> $GITHUB_ENV
           echo REPO_OWNER="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f1)" >> $GITHUB_ENV
           echo REPO_NAME="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)" >> $GITHUB_ENV
-      - name: Import GPG key
-        id: import_gpg
+      - id: import_gpg
+        name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6.2.0
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -89,8 +74,7 @@ jobs:
       - name: Confirm GPG key is loaded
         run: |
           set -eux
-          gpg --list-keys
-          echo "${{ steps.import_gpg.outputs.fingerprint }}"
+          gpg --list-keys | grep $(echo "${{ steps.import_gpg.outputs.fingerprint }}")
       - name: Setup Pages
         uses: actions/configure-pages@v5.0.0
       - name: Build with Jekyll
@@ -103,9 +87,9 @@ jobs:
           set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
-          .github/scripts/build_repo.sh
+          scripts/build_repo.sh
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3.0.1
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
+        name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4.0.5
