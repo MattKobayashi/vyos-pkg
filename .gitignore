@@ -1,5 +1,4 @@
 poetry.lock
-pyproject.toml
 *.tar.gz
 *.tar.xz
 *.dsc

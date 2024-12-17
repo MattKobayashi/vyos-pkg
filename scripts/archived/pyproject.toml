@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "jenkins-grabber"
+version = "0.0.1"
+description = "A script to download Jenkins build artifacts"
+authors = ["MattKobayashi <matthew@kobayashi.au>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-jenkins = "^1.8.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+target-version = ['py311']
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
