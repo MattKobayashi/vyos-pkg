@@ -13,14 +13,14 @@ jobs:
     name: Build packages
     runs-on: ubuntu-24.04
     steps:
+      - name: Checkout the `vyos-pkg` repository
+        uses: actions/checkout@v4.2.2
       - name: Checkout the `vyos-build` repository
         uses: actions/checkout@v4.2.2
         with:
           path: vyos-build
           ref: ${{ matrix.branch }}
           repository: vyos/vyos-build
-      - name: Checkout the `vyos-pkg` repository
-        uses: actions/checkout@v4.2.2
       - name: Build the packages
         working-directory: vyos-build/scripts/package-build
         run: |
