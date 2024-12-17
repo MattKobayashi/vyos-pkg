@@ -1,0 +1,2 @@
+[packages]
+name = ["amazon-cloudwatch-agent", "amazon-ssm-agent", "aws-gwlbtun", "ddclient", "dropbear", "ethtool", "frr", "frr_exporter", "hostap", "hsflowd", "isc-dhcpd", "kea", "keepalived", "linux-kernel", "ndppd", "net-snmp", "netfilter", "node_exporter", "opennhrp", "openvpn-otp", "owamp", "pmacct", "podman", "pyhumps", "radvd", "strongswan", "tacacs", "telegraf", "waagent", "wide-dhcpv6", "xen-guest-agent"]
