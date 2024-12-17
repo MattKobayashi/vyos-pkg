@@ -19,16 +19,19 @@ jobs:
           path: vyos-build
           ref: ${{ matrix.branch }}
           repository: vyos/vyos-build
+      - name: Checkout the `vyos-pkg` repository
+        uses: actions/checkout@v4.2.2
       - name: Build the packages
         working-directory: vyos-build/scripts/package-build
         run: |
           set -eux
+          cp ~/packages/${{ matrix.branch }}/package.toml .
           ./build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@v4.4.3
         with:
           name: vyos-packages-${{ matrix.branch }}
-          path: vyos-build/scripts/package-build/*/*.deb
+          path: vyos-build/scripts/package-build/${{ matrix.branch }}/*.deb
     strategy:
       fail-fast: false
       matrix:
