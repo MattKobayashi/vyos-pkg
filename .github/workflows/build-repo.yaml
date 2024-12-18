@@ -17,8 +17,8 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           path: vyos-build
-          ref: current
-          repository: vyos/vyos-build
+          ref: dev
+          repository: MattKobayashi/vyos-build
       - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent') || (matrix.package == 'podman')
         name: Setup golang
         uses: actions/setup-go@v5.2.0
