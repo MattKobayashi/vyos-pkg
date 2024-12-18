@@ -24,7 +24,7 @@ jobs:
         run: |
           set -eux
           sudo apt-get update
-          sudo apt-get --no-install-recommends install golang
+          sudo apt-get --no-install-recommends --yes install golang
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
