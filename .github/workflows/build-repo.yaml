@@ -20,11 +20,10 @@ jobs:
           ref: current
           repository: vyos/vyos-build
       - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent') || (matrix.package == 'podman')
-        name: Install golang
-        run: |
-          set -eux
-          sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install golang
+        name: Setup golang
+        uses: actions/setup-go@v5.2.0
+        with:
+          go-version: '^1.23'
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
