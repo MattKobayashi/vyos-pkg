@@ -25,7 +25,7 @@ jobs:
         working-directory: vyos-build/scripts/package-build
         run: |
           set -eux
-          cp /__w/vyos-pkg/vyos-pkg/vyos-build/packages/${{ matrix.branch }}/package.toml .
+          cp /__w/vyos-pkg/vyos-pkg/packages/${{ matrix.branch }}/package.toml .
           ./build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@v4.4.3
