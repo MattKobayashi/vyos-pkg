@@ -1,63 +1,92 @@
 [[packages]]
-[amazon-cloudwatch-agent]
 name = "amazon-cloudwatch-agent"
-[amazon-ssm-agent]
+
+[[packages]]
 name = "amazon-ssm-agent"
-[aws-gwlbtun]
+
+[[packages]]
 name = "aws-gwlbtun"
-[ddclient]
+
+[[packages]]
 name = "ddclient"
-[dropbear]
+
+[[packages]]
 name = "dropbear"
-[ethtool]
+
+[[packages]]
 name = "ethtool"
-[frr]
+
+[[packages]]
 name = "frr"
-[frr_exporter]
+
+[[packages]]
 name = "frr_exporter"
-[hostap]
+
+[[packages]]
 name = "hostap"
-[hsflowd]
+
+[[packages]]
 name = "hsflowd"
-[isc-dhcpd]
+
+[[packages]]
 name = "isc-dhcpd"
-[kea]
+
+[[packages]]
 name = "kea"
-[keepalived]
+
+[[packages]]
 name = "keepalived"
-[linux-kernel]
+
+[[packages]]
 name = "linux-kernel"
-[ndppd]
+
+[[packages]]
 name = "ndppd"
-[net-snmp]
+
+[[packages]]
 name = "net-snmp"
-[netfilter]
+
+[[packages]]
 name = "netfilter"
-[node_exporter]
+
+[[packages]]
 name = "node_exporter"
-[opennhrp]
+
+[[packages]]
 name = "opennhrp"
-[openvpn-otp]
+
+[[packages]]
 name = "openvpn-otp"
-[owamp]
+
+[[packages]]
 name = "owamp"
-[pmacct]
+
+[[packages]]
 name = "pmacct"
-[podman]
+
+[[packages]]
 name = "podman"
-[pyhumps]
+
+[[packages]]
 name = "pyhumps"
-[radvd]
+
+[[packages]]
 name = "radvd"
-[strongswan]
+
+[[packages]]
 name = "strongswan"
-[tacacs]
+
+[[packages]]
 name = "tacacs"
-[telegraf]
+
+[[packages]]
 name = "telegraf"
-[waagent]
+
+[[packages]]
 name = "waagent"
-[wide-dhcpv6]
+
+[[packages]]
 name = "wide-dhcpv6"
-[xen-guest-agent]
+
+[[packages]]
 name = "xen-guest-agent"
