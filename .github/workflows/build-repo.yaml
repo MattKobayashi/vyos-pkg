@@ -10,7 +10,6 @@ jobs:
       env:
         TZ: Australia/Brisbane
       image: vyos/vyos-build:current
-      options: --privileged
     name: Build package
     runs-on: ubuntu-24.04
     steps:
@@ -20,18 +19,76 @@ jobs:
           path: vyos-build
           ref: current
           repository: vyos/vyos-build
-      - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent') || (matrix.package == 'podman')
+      - if: (matrix.package == 'podman')
         name: Setup golang
         uses: actions/setup-go@v5.2.0
         with:
           go-version: "1.23.4"
-      - if: (matrix.package == 'owamp')
-        name: Install openntpd
+      - name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
           set -eux
+          python3 build.py
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@v4.5.0
+        with:
+          if-no-files-found: error
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - aws-gwlbtun
+          - ddclient
+          - dropbear
+          - ethtool
+          - frr
+          - frr_exporter
+          - hostap
+          - isc-dhcp
+          - kea
+          - keepalived
+          - linux-kernel
+          - ndppd
+          - net-snmp
+          - netfilter
+          - node_exporter
+          - opennhrp
+          - openvpn-otp
+          - pmacct
+          - podman
+          - pyhumps
+          - radvd
+          - strongswan
+          - tacacs
+          - telegraf
+          - waagent
+          - wide-dhcpv6
+          - xen-guest-agent
+  build-package-nocontainer:
+    name: Build package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install dependencies
+        run: |
+          set -eux
+          python3 -m pip install toml
           sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install openntpd
-          sudo service openntpd start
+          sudo apt-get --no-install-recommends --yes install \
+            devscripts \
+            equivs
+      - name: Checkout the `vyos-build` repository
+        uses: actions/checkout@v4.2.2
+        with:
+          path: vyos-build
+          ref: current
+          repository: vyos/vyos-build
+      - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent')
+        name: Setup golang
+        uses: actions/setup-go@v5.2.0
+        with:
+          go-version: "1.23.4"
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
@@ -49,35 +106,8 @@ jobs:
         package:
           - amazon-cloudwatch-agent
           - amazon-ssm-agent
-          - aws-gwlbtun
-          - ddclient
-          - dropbear
-          - ethtool
-          - frr
-          - frr_exporter
-          - hostap
           - hsflowd
-          - isc-dhcp
-          - kea
-          - keepalived
-          - linux-kernel
-          - ndppd
-          - net-snmp
-          - netfilter
-          - node_exporter
-          - opennhrp
-          - openvpn-otp
           - owamp
-          - pmacct
-          - podman
-          - pyhumps
-          - radvd
-          - strongswan
-          - tacacs
-          - telegraf
-          - waagent
-          - wide-dhcpv6
-          - xen-guest-agent
   create-repo:
     name: Create .deb repository
     needs: build-package
@@ -93,11 +123,8 @@ jobs:
       - name: Install required packages
         run: |
           set -eux
-          until sudo apt-get update
-          do
-            sleep 1
-          done
-          sudo apt-get install --yes \
+          sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install \
             jq \
             createrepo-c \
             coreutils \
