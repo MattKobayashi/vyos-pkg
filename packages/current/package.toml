@@ -1,2 +1,63 @@
-[packages]
-name = ["amazon-cloudwatch-agent", "amazon-ssm-agent", "aws-gwlbtun", "ddclient", "dropbear", "ethtool", "frr", "frr_exporter", "hostap", "hsflowd", "isc-dhcpd", "kea", "keepalived", "linux-kernel", "ndppd", "net-snmp", "netfilter", "node_exporter", "opennhrp", "openvpn-otp", "owamp", "pmacct", "podman", "pyhumps", "radvd", "strongswan", "tacacs", "telegraf", "waagent", "wide-dhcpv6", "xen-guest-agent"]
+[[packages]]
+[amazon-cloudwatch-agent]
+name = "amazon-cloudwatch-agent"
+[amazon-ssm-agent]
+name = "amazon-ssm-agent"
+[aws-gwlbtun]
+name = "aws-gwlbtun"
+[ddclient]
+name = "ddclient"
+[dropbear]
+name = "dropbear"
+[ethtool]
+name = "ethtool"
+[frr]
+name = "frr"
+[frr_exporter]
+name = "frr_exporter"
+[hostap]
+name = "hostap"
+[hsflowd]
+name = "hsflowd"
+[isc-dhcpd]
+name = "isc-dhcpd"
+[kea]
+name = "kea"
+[keepalived]
+name = "keepalived"
+[linux-kernel]
+name = "linux-kernel"
+[ndppd]
+name = "ndppd"
+[net-snmp]
+name = "net-snmp"
+[netfilter]
+name = "netfilter"
+[node_exporter]
+name = "node_exporter"
+[opennhrp]
+name = "opennhrp"
+[openvpn-otp]
+name = "openvpn-otp"
+[owamp]
+name = "owamp"
+[pmacct]
+name = "pmacct"
+[podman]
+name = "podman"
+[pyhumps]
+name = "pyhumps"
+[radvd]
+name = "radvd"
+[strongswan]
+name = "strongswan"
+[tacacs]
+name = "tacacs"
+[telegraf]
+name = "telegraf"
+[waagent]
+name = "waagent"
+[wide-dhcpv6]
+name = "wide-dhcpv6"
+[xen-guest-agent]
+name = "xen-guest-agent"
