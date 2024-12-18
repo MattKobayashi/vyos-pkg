@@ -5,44 +5,68 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-packages:
+  build-package:
     container:
       env:
         TZ: Australia/Brisbane
-      image: vyos/vyos-build:${{ matrix.branch }}
+      image: vyos/vyos-build:current
     name: Build packages
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout the `vyos-pkg` repository
-        uses: actions/checkout@v4.2.2
       - name: Checkout the `vyos-build` repository
         uses: actions/checkout@v4.2.2
         with:
           path: vyos-build
-          ref: ${{ matrix.branch }}
+          ref: current
           repository: vyos/vyos-build
-      - name: Build the packages
-        working-directory: vyos-build/scripts/package-build
+      - name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
           set -eux
-          for subdirectory in */
-          do
-            cd $subdirectory
-            python3 build.py
-          done
+          python3 build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@v4.5.0
         with:
-          name: vyos-packages-${{ matrix.branch }}
-          path: vyos-build/scripts/package-build/${{ matrix.branch }}/*.deb
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
       fail-fast: false
       matrix:
-        branch:
-          - current
+        package:
+          - amazon-cloudwatch-agent
+          - amazon-ssm-agent
+          - aws-gwlbtun
+          - ddclient
+          - dropbear
+          - ethtool
+          - frr
+          - frr_exporter
+          - hostap
+          - hsflowd
+          - isc-dhcp
+          - kea
+          - keepalived
+          - linux-kernel
+          - ndppd
+          - net-snmp
+          - netfilter
+          - node_exporter
+          - opennhrp
+          - openvpn-otp
+          - owamp
+          - pmacct
+          - podman
+          - pyhumps
+          - radvd
+          - strongswan
+          - tacacs
+          - telegraf
+          - waagent
+          - wide-dhcpv6
+          - xen-guest-agent
   create-repo:
     name: Create .deb repository
-    needs: build-packages
+    needs: build-package
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the `vyos-pkg` repository
@@ -50,7 +74,7 @@ jobs:
       - name: Download the .deb file artifacts
         uses: actions/download-artifact@v4.1.8
         with:
-          name: vyos-packages-current
+          merge-multiple: true
           path: packages/current
       - name: Install required packages
         run: |
