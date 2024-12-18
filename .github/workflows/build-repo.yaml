@@ -19,7 +19,7 @@ jobs:
           path: vyos-build
           ref: current
           repository: vyos/vyos-build
-      - if: matrix.package == ('amazon-cloudwatch-agent' || 'amazon-ssm-agent' || 'podman')
+      - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent') || (matrix.package == 'podman')
         name: Install golang
         run: |
           set -eux
