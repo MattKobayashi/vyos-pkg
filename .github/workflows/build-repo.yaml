@@ -23,12 +23,7 @@ jobs:
         name: Setup golang
         uses: actions/setup-go@v5.2.0
         with:
-          go-version: "^1.23"
-      - if: (matrix.package == 'amazon-cloudwatch-agent')
-        name: Install rpm-build
-        run: |
-          sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install rpm
+          go-version: '^1.23'
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
