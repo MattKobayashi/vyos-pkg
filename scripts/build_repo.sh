@@ -8,7 +8,7 @@ set -euo pipefail
 readonly SITE_DIR="_site"
 readonly SUPPORTED_BRANCHES=("current" "sagitta")
 readonly DEB_COMPONENTS="${COMPONENTS:-main}"
-readonly SOURCE_DIR="${SOURCE_DIR:-/vyos-build/scripts/package-build}"
+readonly SOURCE_DIR="${SOURCE_DIR:-packages}"
 readonly GPG_TTY=$(tty)
 
 # Check required environment variables
