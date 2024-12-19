@@ -113,6 +113,9 @@ jobs:
   create-repo:
     name: Create .deb repository
     needs: build-package
+    permissions:
+      id-token: write
+      pages: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the `vyos-pkg` repository
