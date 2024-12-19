@@ -150,14 +150,12 @@ jobs:
         uses: actions/configure-pages@v5.0.0
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1.0.13
-        with:
-          source: ./
-          destination: ./_site
       - name: Build .deb repository
         run: |
           set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
+          sudo chown -R $(whoami):$(whoami) _site/
           scripts/build_repo.sh
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3.0.1
