@@ -30,6 +30,7 @@ jobs:
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
           set -eux
+          sudo apt-get update
           python3 build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@v4.5.0
@@ -111,6 +112,9 @@ jobs:
           - hsflowd
           - owamp
   create-repo:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
     needs: build-package
     permissions:
