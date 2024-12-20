@@ -5,43 +5,121 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-packages:
+  build-package:
     container:
       env:
         TZ: Australia/Brisbane
-      image: vyos/vyos-build:${{ matrix.branch }}
-    name: Build packages
+      image: vyos/vyos-build:current
+    name: Build package
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout the `vyos-pkg` repository
-        uses: actions/checkout@v4.2.2
       - name: Checkout the `vyos-build` repository
         uses: actions/checkout@v4.2.2
         with:
           path: vyos-build
-          ref: ${{ matrix.branch }}
+          ref: current
           repository: vyos/vyos-build
-      - name: Build the packages
-        working-directory: vyos-build/scripts/package-build
+      - if: (matrix.package == 'podman')
+        name: Setup golang
+        uses: actions/setup-go@v5.2.0
+        with:
+          go-version: "1.23.4"
+      - env:
+          DEB_BUILD_OPTIONS: ${{ matrix.package == 'kea' && 'parallel=1' || 'parallel=auto' }}
+        name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
           set -eux
-          for subdirectory in */
-          do
-            python3 build.py -d $subdirectory
-          done
+          sudo apt-get update
+          python3 build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@v4.5.0
         with:
-          name: vyos-packages-${{ matrix.branch }}
-          path: vyos-build/scripts/package-build/${{ matrix.branch }}/*.deb
+          if-no-files-found: error
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
       fail-fast: false
       matrix:
-        branch:
-          - current
+        package:
+          - aws-gwlbtun
+          - ddclient
+          - dropbear
+          - ethtool
+          - frr
+          - frr_exporter
+          - hostap
+          - isc-dhcp
+          - kea
+          - keepalived
+          - linux-kernel
+          - ndppd
+          - net-snmp
+          - netfilter
+          - node_exporter
+          - opennhrp
+          - openvpn-otp
+          - pmacct
+          - podman
+          - pyhumps
+          - radvd
+          - strongswan
+          - tacacs
+          - telegraf
+          - waagent
+          - wide-dhcpv6
+          - xen-guest-agent
+  build-package-nocontainer:
+    name: Build package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install dependencies
+        run: |
+          set -eux
+          python3 -m pip install toml
+          sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install \
+            devscripts \
+            equivs
+      - name: Checkout the `vyos-build` repository
+        uses: actions/checkout@v4.2.2
+        with:
+          path: vyos-build
+          ref: current
+          repository: vyos/vyos-build
+      - if: (matrix.package == 'amazon-cloudwatch-agent') || (matrix.package == 'amazon-ssm-agent')
+        name: Setup golang
+        uses: actions/setup-go@v5.2.0
+        with:
+          go-version: "1.23.4"
+      - name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
+        run: |
+          set -eux
+          python3 build.py
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@v4.5.0
+        with:
+          if-no-files-found: error
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - amazon-cloudwatch-agent
+          - amazon-ssm-agent
+          - hsflowd
+          - owamp
   create-repo:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
-    needs: build-packages
+    needs: build-package
+    permissions:
+      id-token: write
+      pages: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the `vyos-pkg` repository
@@ -49,16 +127,13 @@ jobs:
       - name: Download the .deb file artifacts
         uses: actions/download-artifact@v4.1.8
         with:
-          name: vyos-packages-current
+          merge-multiple: true
           path: packages/current
       - name: Install required packages
         run: |
           set -eux
-          until sudo apt-get update
-          do
-            sleep 1
-          done
-          sudo apt-get install --yes \
+          sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install \
             jq \
             createrepo-c \
             coreutils \
@@ -84,14 +159,12 @@ jobs:
         uses: actions/configure-pages@v5.0.0
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1.0.13
-        with:
-          source: ./
-          destination: ./_site
       - name: Build .deb repository
         run: |
           set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
+          sudo chown -R $(whoami):$(whoami) _site/
           scripts/build_repo.sh
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3.0.1

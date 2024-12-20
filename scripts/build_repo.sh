@@ -6,9 +6,9 @@ set -euo pipefail
 
 # Constants
 readonly SITE_DIR="_site"
-readonly SUPPORTED_BRANCHES=("current", "sagitta")
+readonly SUPPORTED_BRANCHES=("current" "sagitta")
 readonly DEB_COMPONENTS="${COMPONENTS:-main}"
-readonly SOURCE_DIR="${SOURCE_DIR:-/vyos-build/scripts/package-build}"
+readonly SOURCE_DIR="${SOURCE_DIR:-packages}"
 readonly GPG_TTY=$(tty)
 
 # Check required environment variables
@@ -25,30 +25,40 @@ check_env_vars() {
 generate_hashes() {
     local hash_type="$1"
     local hash_command="$2"
+    local base_dir="$3"
     
     echo "${hash_type}:"
-    # Change to components directory before generating hashes
-    cd "${DEB_COMPONENTS}" || exit 1
-    find . -type f -printf "%P\n" | while read -r file; do
-        echo " $(${hash_command} "$file" | cut -d" " -f1) $(wc -c "$file")"
+    find "${base_dir}/${DEB_COMPONENTS}" -type f -printf "%P\n" | while read -r file; do
+        echo " $(${hash_command} "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d" " -f1) $(wc -c "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d" " -f1)"
     done
-    cd - >/dev/null || exit 1
 }
 
-copy_debs() {
+move_debs() {
     local branch="$1"
     local target_dir="$2"
     local source_path="${SOURCE_DIR}/${branch}"
+    local moved=0
 
     if [[ ! -d "${source_path}" ]]; then
-        echo "Warning: Source directory ${source_path} not found, skipping copy"
+        echo "Warning: Source directory ${source_path} not found, skipping move"
         return 0
     fi
 
-    echo "Copying .deb packages from ${source_path}..."
+    echo "Moving .deb packages from ${source_path}..."
     mkdir -p "${target_dir}"
-    if ! find "${source_path}" -name "*.deb" -type f -exec cp {} "${target_dir}/" \;; then
+    while IFS= read -r -d '' file; do
+        if mv "$file" "${target_dir}/"; then
+            ((moved++))
+        else
+            echo "Error: Failed to move $file"
+            return 1
+        fi
+    done < <(find "${source_path}" -name "*.deb" -type f -print0)
+
+    if ((moved == 0)); then
         echo "Warning: No .deb packages found in ${source_path}"
+    else
+        echo "Successfully moved ${moved} packages"
     fi
 }
 
@@ -63,21 +73,22 @@ build_repo() {
     
     echo "Building repository for ${branch}..."
     
-    # Create repository structure and copy packages
-    mkdir -p "${deb_base}/${deb_dists_components}"
-    copy_debs "${branch}" "${deb_pool}"
+    # Create repository structure and move packages
+    mkdir -p "${deb_pool}"
+    mkdir -p "${deb_dists_components}"
+    move_debs "${branch}" "${deb_pool}"
     
     # Generate package information
     pushd "${deb_base}" >/dev/null || exit 1
     echo "Scanning packages and creating Packages file..."
-    if ! dpkg-scanpackages pool/ > "${deb_dists_components}/Packages" 2>/dev/null; then
+    if ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages" 2>/dev/null; then
         echo "Error: Package scanning failed"
         exit 1
     fi
     
     # Compress package information
-    gzip -9 > "${deb_dists_components}/Packages.gz" < "${deb_dists_components}/Packages"
-    bzip2 -9 > "${deb_dists_components}/Packages.bz2" < "${deb_dists_components}/Packages"
+    gzip -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.gz" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
+    bzip2 -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.bz2" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
     
     # Generate and sign Release file
     pushd "${deb_dists}" >/dev/null || exit 1
@@ -92,18 +103,18 @@ build_repo() {
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: ${DESCRIPTION:-A repository for packages released by ${REPO_OWNER}}"
         echo "Date: $(date -Ru)"
-        generate_hashes MD5Sum md5sum
-        generate_hashes SHA1 sha1sum
-        generate_hashes SHA256 sha256sum
+        generate_hashes MD5Sum md5sum "."
+        generate_hashes SHA1 sha1sum "."
+        generate_hashes SHA256 sha256sum "."
     } > Release
 
     echo "Signing Release file..."
     export GPG_TTY
-    if ! gpg --detach-sign --armor --sign > Release.gpg < Release; then
+    if ! gpg --detach-sign --armor > Release.gpg < Release; then
         echo "Error: GPG signing failed for Release.gpg"
         exit 1
     fi
-    if ! gpg --detach-sign --armor --sign --clearsign > InRelease < Release; then
+    if ! gpg --clearsign > InRelease < Release; then
         echo "Error: GPG signing failed for InRelease"
         exit 1
     fi
@@ -115,14 +126,22 @@ build_repo() {
 }
 
 cleanup() {
+    # Clean up any temporary files or failed builds
+    rm -rf "${SITE_DIR:?}/packages"
     if [[ -n "${temp_dir:-}" ]]; then
-        rm -rf "$temp_dir"
+        rm -rf "${temp_dir}"
     fi
 }
 
 main() {
     # Set up cleanup trap
-    trap cleanup EXIT
+    trap cleanup EXIT INT TERM
+
+    # Check if site directory already exists
+    if [[ -d "${SITE_DIR}" ]]; then
+        echo "Warning: ${SITE_DIR} already exists, cleaning up..."
+        rm -rf "${SITE_DIR}"
+    fi
 
     # Check environment variables
     check_env_vars
@@ -137,8 +156,16 @@ main() {
     
     # Build repositories for all branches
     for branch in "${SUPPORTED_BRANCHES[@]}"; do
-        build_repo "$branch"
+        if ! build_repo "$branch"; then
+            echo "Error: Failed to build repository for ${branch}"
+            exit 1
+        fi
     done
+
+    # Clean up packages directory
+    rm -rf "${SITE_DIR}/packages"
+    
+    echo "All repositories built successfully"
 }
 
 main "$@"
