@@ -35,19 +35,19 @@ generate_hashes() {
     cd - >/dev/null || exit 1
 }
 
-copy_debs() {
+move_debs() {
     local branch="$1"
     local target_dir="$2"
     local source_path="${SOURCE_DIR}/${branch}"
 
     if [[ ! -d "${source_path}" ]]; then
-        echo "Warning: Source directory ${source_path} not found, skipping copy"
+        echo "Warning: Source directory ${source_path} not found, skipping move"
         return 0
     fi
 
-    echo "Copying .deb packages from ${source_path}..."
+    echo "Moving .deb packages from ${source_path}..."
     mkdir -p "${target_dir}"
-    if ! find "${source_path}" -name "*.deb" -type f -exec cp {} "${target_dir}/" \;; then
+    if ! find "${source_path}" -name "*.deb" -type f -exec mv {} "${target_dir}/" \;; then
         echo "Warning: No .deb packages found in ${source_path}"
     fi
 }
@@ -63,21 +63,22 @@ build_repo() {
     
     echo "Building repository for ${branch}..."
     
-    # Create repository structure and copy packages
-    mkdir -p "${deb_base}/${deb_dists_components}"
-    copy_debs "${branch}" "${deb_pool}"
+    # Create repository structure and move packages
+    mkdir -p "${deb_pool}"
+    mkdir -p "${deb_dists_components}"
+    move_debs "${branch}" "${deb_pool}"
     
     # Generate package information
     pushd "${deb_base}" >/dev/null || exit 1
     echo "Scanning packages and creating Packages file..."
-    if ! dpkg-scanpackages pool/ > "${deb_dists_components}/Packages" 2>/dev/null; then
+    if ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages" 2>/dev/null; then
         echo "Error: Package scanning failed"
         exit 1
     fi
     
     # Compress package information
-    gzip -9 > "${deb_dists_components}/Packages.gz" < "${deb_dists_components}/Packages"
-    bzip2 -9 > "${deb_dists_components}/Packages.bz2" < "${deb_dists_components}/Packages"
+    gzip -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.gz" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
+    bzip2 -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.bz2" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
     
     # Generate and sign Release file
     pushd "${deb_dists}" >/dev/null || exit 1
