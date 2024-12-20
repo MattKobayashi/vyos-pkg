@@ -39,7 +39,7 @@ jobs:
           name: ${{ matrix.package }}
           path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         package:
           - aws-gwlbtun
