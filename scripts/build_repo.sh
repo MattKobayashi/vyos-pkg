@@ -137,12 +137,6 @@ main() {
     # Set up cleanup trap
     trap cleanup EXIT INT TERM
 
-    # Check if site directory already exists
-    if [[ -d "${SITE_DIR}" ]]; then
-        echo "Warning: ${SITE_DIR} already exists, cleaning up..."
-        rm -rf "${SITE_DIR}"
-    fi
-
     # Check environment variables
     check_env_vars
     
