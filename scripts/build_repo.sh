@@ -91,7 +91,7 @@ build_repo() {
     bzip2 -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.bz2" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
     
     # Generate and sign Release file
-    pushd "${deb_dists}" >/dev/null || exit 1
+    pushd "dists/${branch}/${DEB_COMPONENTS}/binary-all" >/dev/null || exit 1
     echo "Generating Release file..."
     {
         echo "Origin: ${ORIGIN:-VyOS}"
