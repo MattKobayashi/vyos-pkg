@@ -33,7 +33,7 @@ jobs:
           sudo apt-get update
           python3 build.py
       - name: Upload the .deb files as artifacts
-        uses: actions/upload-artifact@v4.5.0
+        uses: actions/upload-artifact@v4.6.0
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
@@ -98,7 +98,7 @@ jobs:
           set -eux
           python3 build.py
       - name: Upload the .deb files as artifacts
-        uses: actions/upload-artifact@v4.5.0
+        uses: actions/upload-artifact@v4.6.0
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
