@@ -6,10 +6,13 @@ set -euo pipefail
 
 # Constants
 readonly SITE_DIR="_site"
-readonly SUPPORTED_BRANCHES=("current" "sagitta")
-readonly DEB_COMPONENTS="${COMPONENTS:-main}"
-readonly SOURCE_DIR="${SOURCE_DIR:-packages}"
+readonly SUPPORTED_BRANCHES=("current")
+readonly DEB_COMPONENTS="main"
+readonly SOURCE_DIR="packages"
 readonly GPG_TTY=$(tty)
+
+# Logging configuration
+readonly DEBUG=false
 
 # Check required environment variables
 check_env_vars() {
@@ -27,10 +30,32 @@ generate_hashes() {
     local hash_command="$2"
     local base_dir="$3"
     
-    echo "${hash_type}:"
+    echo "${hash_type}:" >&2
     find "${base_dir}/${DEB_COMPONENTS}" -type f -printf "%P\n" | while read -r file; do
-        echo " $(${hash_command} "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d" " -f1) $(wc -c "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d" " -f1)"
+        echo " $(${hash_command} "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d' ' -f1) $(wc -c "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d' ' -f1)"
     done
+}
+
+log_message() {
+    local level="$1"
+    local message="$2"
+    echo "${level}: ${message}"
+    if ${DEBUG}; then
+        echo "${level}: ${message}" >&2
+    fi
+}
+
+error() {
+    log_message "ERROR" "$1"
+    exit 1
+}
+
+warning() {
+    log_message "WARNING" "$1"
+}
+
+info() {
+    log_message "INFO" "$1"
 }
 
 move_debs() {
@@ -40,25 +65,24 @@ move_debs() {
     local moved=0
 
     if [[ ! -d "${source_path}" ]]; then
-        echo "Warning: Source directory ${source_path} not found, skipping move"
+        warning "Source directory ${source_path} not found, skipping move"
         return 0
     fi
 
-    echo "Moving .deb packages from ${source_path}..."
+    info "Moving .deb packages from ${source_path}..."
     mkdir -p "${target_dir}"
     while IFS= read -r -d '' file; do
         if mv "$file" "${target_dir}/"; then
             ((moved++))
         else
-            echo "Error: Failed to move $file"
-            return 1
+            error "Failed to move $file"
         fi
     done < <(find "${source_path}" -name "*.deb" -type f -print0)
 
     if ((moved == 0)); then
-        echo "Warning: No .deb packages found in ${source_path}"
+        warning "No .deb packages found in ${source_path}"
     else
-        echo "Successfully moved ${moved} packages"
+        info "Successfully moved ${moved} packages"
     fi
 }
 
@@ -94,14 +118,14 @@ build_repo() {
     pushd "dists/${branch}/${DEB_COMPONENTS}/binary-all" >/dev/null || exit 1
     echo "Generating Release file..."
     {
-        echo "Origin: ${ORIGIN:-VyOS}"
+        echo "Origin: VyOS"
         echo "Label: ${REPO_OWNER}"
         echo "Suite: ${branch}"
         echo "Codename: ${branch}"
         echo "Version: 1.0"
         echo "Architectures: all"
         echo "Components: ${DEB_COMPONENTS}"
-        echo "Description: ${DESCRIPTION:-A repository for packages released by ${REPO_OWNER}}"
+        echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
         generate_hashes MD5Sum md5sum "."
         generate_hashes SHA1 sha1sum "."
@@ -127,8 +151,12 @@ build_repo() {
 
 cleanup() {
     # Clean up any temporary files or failed builds
-    rm -rf "${SITE_DIR:?}/packages"
+    if [[ -d "${SITE_DIR}/packages" ]]; then
+        info "Cleaning up packages directory"
+        rm -rf "${SITE_DIR}/packages"
+    fi
     if [[ -n "${temp_dir:-}" ]]; then
+        info "Cleaning up temporary directory"
         rm -rf "${temp_dir}"
     fi
 }
@@ -138,27 +166,30 @@ main() {
     trap cleanup EXIT INT TERM
 
     # Check environment variables
+    info "Starting repository build process"
     check_env_vars
     
     # Verify required tools
+    info "Checking required tools"
     for cmd in dpkg-scanpackages gpg gzip bzip2; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "Error: Required command '$cmd' not found"
-            exit 1
+            error "Required command '$cmd' not found"
         fi
     done
     
     # Build repositories for all branches
+    info "Building repositories for supported branches"
     for branch in "${SUPPORTED_BRANCHES[@]}"; do
         if ! build_repo "$branch"; then
-            echo "Error: Failed to build repository for ${branch}"
-            exit 1
+            error "Failed to build repository for ${branch}"
         fi
     done
 
     # Clean up packages directory
+    info "Final cleanup"
     rm -rf "${SITE_DIR}/packages"
     
+    info "All repositories built successfully"
     echo "All repositories built successfully"
 }
 
