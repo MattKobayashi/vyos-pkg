@@ -31,8 +31,8 @@ generate_hashes() {
     local base_dir="$3"
     
     echo "${hash_type}:" >&2
-    find "${base_dir}/${DEB_COMPONENTS}" -type f -printf "%P\n" | while read -r file; do
-        echo " $(${hash_command} "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d' ' -f1) $(wc -c "${base_dir}/${DEB_COMPONENTS}/$file" | cut -d' ' -f1)"
+    find "${base_dir}" -type f -printf "%P\n" | while read -r file; do
+        echo " $(${hash_command} "$file" | cut -d' ' -f1) $(wc -c "$file" | cut -d' ' -f1)"
     done
 }
 
@@ -127,9 +127,9 @@ build_repo() {
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
-        generate_hashes MD5Sum md5sum "."
-        generate_hashes SHA1 sha1sum "."
-        generate_hashes SHA256 sha256sum "."
+        generate_hashes MD5Sum md5sum "$(pwd)"
+        generate_hashes SHA1 sha1sum "$(pwd)"
+        generate_hashes SHA256 sha256sum "$(pwd)"
     } > Release
 
     echo "Signing Release file..."
