@@ -238,7 +238,7 @@ build_repo() {
     
     # Move the temporary file to the final Release file
     mv Release.tmp Release
-
+    
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
     if ! grep -q "^MD5Sum:" "Release" || ! grep -A 1 "MD5Sum:" "Release" | grep -q "^ "; then
