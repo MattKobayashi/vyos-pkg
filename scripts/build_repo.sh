@@ -38,6 +38,7 @@ check_env_vars() {
     fi
 }
 
+# This function is no longer used - we're using direct hash generation in the build_repo function
 generate_hashes() {
     local hash_type="$1"
     local hash_command="$2"
@@ -172,7 +173,7 @@ build_repo() {
     # Generate and sign Release file in the correct location (dists/${branch}/)
     pushd "${deb_base}/dists/${branch}" >/dev/null || exit 1
     info "Generating Release file..."
-    # Create the Release file with all information in one operation
+    # First create the basic Release file information
     {
         echo "Origin: VyOS"
         echo "Label: ${REPO_OWNER}"
@@ -183,12 +184,47 @@ build_repo() {
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
-        
-        # Generate hashes for all files - directly include their output
-        generate_hashes MD5Sum md5sum "." ""
-        generate_hashes SHA1 sha1sum "." ""
-        generate_hashes SHA256 sha256sum "." ""
     } > Release
+
+    # The key issue: manually capture and append the hash outputs
+    # This approach writes directly to the file rather than trying to capture function output
+    # through command substitution which is where things are going wrong
+
+    # Generate MD5 hashes
+    {
+        echo "MD5Sum:"
+        find "${DEB_COMPONENTS}" -type f -not -path "*/\.*" | sort | while read -r filepath; do
+            if [[ "${filepath}" != "Release" && "${filepath}" != "Release.gpg" && "${filepath}" != "InRelease" ]]; then
+                file_hash=$(md5sum "${filepath}" | cut -d' ' -f1)
+                file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
+                echo " ${file_hash} ${file_size} ${filepath}"
+            fi
+        done
+    } >> Release
+
+    # Generate SHA1 hashes
+    {
+        echo "SHA1:"
+        find "${DEB_COMPONENTS}" -type f -not -path "*/\.*" | sort | while read -r filepath; do
+            if [[ "${filepath}" != "Release" && "${filepath}" != "Release.gpg" && "${filepath}" != "InRelease" ]]; then
+                file_hash=$(sha1sum "${filepath}" | cut -d' ' -f1)
+                file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
+                echo " ${file_hash} ${file_size} ${filepath}"
+            fi
+        done
+    } >> Release
+
+    # Generate SHA256 hashes
+    {
+        echo "SHA256:"
+        find "${DEB_COMPONENTS}" -type f -not -path "*/\.*" | sort | while read -r filepath; do
+            if [[ "${filepath}" != "Release" && "${filepath}" != "Release.gpg" && "${filepath}" != "InRelease" ]]; then
+                file_hash=$(sha256sum "${filepath}" | cut -d' ' -f1)
+                file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
+                echo " ${file_hash} ${file_size} ${filepath}"
+            fi
+        done
+    } >> Release
     
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
