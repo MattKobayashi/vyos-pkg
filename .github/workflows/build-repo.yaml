@@ -42,32 +42,32 @@ jobs:
       fail-fast: true
       matrix:
         package:
-          - aws-gwlbtun
-          - ddclient
+          # - aws-gwlbtun
+          # - ddclient
           - dropbear
           - ethtool
-          - frr
-          - frr_exporter
-          - hostap
-          - isc-dhcp
-          - kea
-          - keepalived
-          - linux-kernel
-          - ndppd
-          - net-snmp
-          - netfilter
-          - node_exporter
-          - openvpn-otp
-          - pmacct
-          - podman
-          - pyhumps
-          - radvd
-          - strongswan
-          - tacacs
-          - telegraf
-          - waagent
-          - wide-dhcpv6
-          - xen-guest-agent
+          # - frr
+          # - frr_exporter
+          # - hostap
+          # - isc-dhcp
+          # - kea
+          # - keepalived
+          # - linux-kernel
+          # - ndppd
+          # - net-snmp
+          # - netfilter
+          # - node_exporter
+          # - openvpn-otp
+          # - pmacct
+          # - podman
+          # - pyhumps
+          # - radvd
+          # - strongswan
+          # - tacacs
+          # - telegraf
+          # - waagent
+          # - wide-dhcpv6
+          # - xen-guest-agent
   build-package-nocontainer:
     name: Build package
     runs-on: ubuntu-24.04
@@ -106,8 +106,8 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - amazon-cloudwatch-agent
-          - amazon-ssm-agent
+          # - amazon-cloudwatch-agent
+          # - amazon-ssm-agent
           - hsflowd
           - owamp
   create-repo:
