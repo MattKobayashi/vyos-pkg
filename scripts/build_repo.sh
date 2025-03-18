@@ -51,20 +51,7 @@ generate_hashes() {
     local files_found=$(find "${base_dir}" -type f -not -path "*/\.*" | wc -l)
     info "Found ${files_found} files for hashing in ${base_dir}"
     
-    if [[ ${files_found} -eq 0 ]]; then
-        warning "No files found for hashing. Trying broader search..."
-        files_found=$(find . -type f -not -path "*/\.*" | wc -l)
-        info "Found ${files_found} files with broader search"
-        
-        # If still no files, use parent directory for debugging
-        if [[ ${files_found} -eq 0 ]]; then
-            info "Directory contents:"
-            ls -la
-            info "Parent directory contents:"
-            ls -la ..
-        fi
-    fi
-    
+    # Output the hash type header
     echo "${hash_type}:"
     
     # List all component directories for debugging
@@ -76,40 +63,20 @@ generate_hashes() {
         fi
     done
     
-    # Use find with more explicit path handling
+    # Use find with more explicit path handling to generate the hash entries
     # First try files in the component directories
-    local component_files=$(find "${DEB_COMPONENTS}" -type f 2>/dev/null | sort)
-    if [[ -n "${component_files}" ]]; then
-        info "Found files in component directories"
+    while IFS= read -r filepath; do
+        # Skip Release files
+        if [[ "${filepath}" == "Release" || "${filepath}" == "Release.gpg" || "${filepath}" == "InRelease" ]]; then
+            continue
+        fi
         
-        while IFS= read -r filepath; do
-            # Get relative path by removing leading component name
-            local file=${filepath#*/}
+        if [[ -f "${filepath}" ]]; then
             local file_hash=$(${hash_command} "${filepath}" | cut -d' ' -f1)
             local file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
-            echo " ${file_hash} ${file_size} ${comp}/${file}"
-        done <<< "${component_files}"
-    else
-        # If no files found in components, try files in current directory
-        warning "No files found in component directories. Falling back to current directory."
-        local current_files=$(find . -maxdepth 1 -type f -not -path "*/\.*" 2>/dev/null | sort)
-        
-        if [[ -n "${current_files}" ]]; then
-            while IFS= read -r filepath; do
-                # Skip Release files
-                if [[ "${filepath}" == "./Release" || "${filepath}" == "./Release.gpg" || "${filepath}" == "./InRelease" ]]; then
-                    continue
-                fi
-                
-                local file=${filepath#./}
-                local file_hash=$(${hash_command} "${filepath}" | cut -d' ' -f1)
-                local file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
-                echo " ${file_hash} ${file_size} ${file}"
-            done <<< "${current_files}"
-        else
-            warning "No files found for hashing in current directory either."
+            echo " ${file_hash} ${file_size} ${filepath}"
         fi
-    fi
+    done < <(find "${DEB_COMPONENTS}" -type f -not -path "*/\.*" | sort)
 }
 
 log_message() {
@@ -205,7 +172,7 @@ build_repo() {
     # Generate and sign Release file in the correct location (dists/${branch}/)
     pushd "${deb_base}/dists/${branch}" >/dev/null || exit 1
     info "Generating Release file..."
-    # First create a temporary file with the basic information
+    # Create the Release file with all information in one operation
     {
         echo "Origin: VyOS"
         echo "Label: ${REPO_OWNER}"
@@ -216,28 +183,12 @@ build_repo() {
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
-    } > Release.tmp
-    
-    # Look in all component/binary-arch directories
-    info "Finding files for hash generation..."
-    for comp in ${DEB_COMPONENTS}; do
-        for arch in "${ARCHITECTURES[@]}"; do
-            if [[ -d "${comp}/binary-${arch}" ]]; then
-                info "Found component directory: ${comp}/binary-${arch}"
-            fi
-        done
-    done
-
-    # Generate hashes for all files and append them directly to the Release file
-    {
-        # Generate hashes for all files
+        
+        # Generate hashes for all files - directly include their output
         generate_hashes MD5Sum md5sum "." ""
         generate_hashes SHA1 sha1sum "." ""
         generate_hashes SHA256 sha256sum "." ""
-    } >> Release.tmp
-    
-    # Move the temporary file to the final Release file
-    mv Release.tmp Release
+    } > Release
     
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
