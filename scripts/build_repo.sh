@@ -45,33 +45,71 @@ generate_hashes() {
     local prefix="${4:-}"
     
     info "Generating ${hash_type} hashes for files in ${base_dir}"
-    local file_count=$(find "${base_dir}" -type f -not -path "*/\.*" | wc -l)
-    info "Found ${file_count} files for hashing"
+    info "Current working directory: $(pwd)"
     
-    echo "${hash_type}:"
-    # Use process substitution instead of a pipeline to avoid subshell issues
-    find_result=$(find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" 2>/dev/null | sort)
+    # First, test what find returns
+    local files_found=$(find "${base_dir}" -type f -not -path "*/\.*" | wc -l)
+    info "Found ${files_found} files for hashing in ${base_dir}"
     
-    if [[ -z "${find_result}" ]]; then
-        warning "No files found for hashing in ${base_dir}"
-        return
+    if [[ ${files_found} -eq 0 ]]; then
+        warning "No files found for hashing. Trying broader search..."
+        files_found=$(find . -type f -not -path "*/\.*" | wc -l)
+        info "Found ${files_found} files with broader search"
+        
+        # If still no files, use parent directory for debugging
+        if [[ ${files_found} -eq 0 ]]; then
+            info "Directory contents:"
+            ls -la
+            info "Parent directory contents:"
+            ls -la ..
+        fi
     fi
     
-    while IFS= read -r file; do
-        # Skip the Release files themselves
-        if [[ "$file" == "Release" || "$file" == "Release.gpg" || "$file" == "InRelease" ]]; then
-            continue
-        fi
-        
-        # Only calculate hash if the file exists
-        if [[ -f "${base_dir}/${file}" ]]; then
-            local file_hash=$(${hash_command} "${base_dir}/${file}" | cut -d' ' -f1)
-            local file_size=$(wc -c "${base_dir}/${file}" | cut -d' ' -f1)
-            echo " ${file_hash} ${file_size} ${prefix}${file}"
+    echo "${hash_type}:"
+    
+    # List all component directories for debugging
+    for comp in ${DEB_COMPONENTS}; do
+        if [[ -d "${comp}" ]]; then
+            info "Component directory ${comp} exists"
         else
-            warning "File ${base_dir}/${file} not found when generating hash"
+            warning "Component directory ${comp} does not exist"
         fi
-    done <<< "${find_result}"
+    done
+    
+    # Use find with more explicit path handling
+    # First try files in the component directories
+    local component_files=$(find "${DEB_COMPONENTS}" -type f 2>/dev/null | sort)
+    if [[ -n "${component_files}" ]]; then
+        info "Found files in component directories"
+        
+        while IFS= read -r filepath; do
+            # Get relative path by removing leading component name
+            local file=${filepath#*/}
+            local file_hash=$(${hash_command} "${filepath}" | cut -d' ' -f1)
+            local file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
+            echo " ${file_hash} ${file_size} ${comp}/${file}"
+        done <<< "${component_files}"
+    else
+        # If no files found in components, try files in current directory
+        warning "No files found in component directories. Falling back to current directory."
+        local current_files=$(find . -maxdepth 1 -type f -not -path "*/\.*" 2>/dev/null | sort)
+        
+        if [[ -n "${current_files}" ]]; then
+            while IFS= read -r filepath; do
+                # Skip Release files
+                if [[ "${filepath}" == "./Release" || "${filepath}" == "./Release.gpg" || "${filepath}" == "./InRelease" ]]; then
+                    continue
+                fi
+                
+                local file=${filepath#./}
+                local file_hash=$(${hash_command} "${filepath}" | cut -d' ' -f1)
+                local file_size=$(wc -c "${filepath}" | cut -d' ' -f1)
+                echo " ${file_hash} ${file_size} ${file}"
+            done <<< "${current_files}"
+        else
+            warning "No files found for hashing in current directory either."
+        fi
+    fi
 }
 
 log_message() {
@@ -180,6 +218,16 @@ build_repo() {
         
         # Generate hashes for all files in the dists directory
         info "Finding files for hash generation..."
+        # Look in all component/binary-arch directories
+        for comp in ${DEB_COMPONENTS}; do
+            for arch in "${ARCHITECTURES[@]}"; do
+                if [[ -d "${comp}/binary-${arch}" ]]; then
+                    info "Found component directory: ${comp}/binary-${arch}"
+                fi
+            done
+        done
+
+        # Generate hashes for all files
         generate_hashes MD5Sum md5sum "." ""
         generate_hashes SHA1 sha1sum "." ""
         generate_hashes SHA256 sha256sum "." ""
@@ -187,13 +235,13 @@ build_repo() {
 
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
-    if ! grep -q "^MD5Sum:" "./Release" || ! grep -A 1 "MD5Sum:" "./Release" | grep -q "^ "; then
+    if ! grep -q "^MD5Sum:" "Release" || ! grep -A 1 "MD5Sum:" "Release" | grep -q "^ "; then
         warning "No MD5Sum entries found in Release file. Repository may be empty or hash generation failed."
         # Add debug output
         echo "Current directory: $(pwd)"
         echo "Files in current directory: $(ls -la)"
         echo "Content of Release file:"
-        cat ./Release
+        cat Release
     fi
     
     info "Signing Release file..."
