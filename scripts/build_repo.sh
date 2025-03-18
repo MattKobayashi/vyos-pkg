@@ -205,6 +205,7 @@ build_repo() {
     # Generate and sign Release file in the correct location (dists/${branch}/)
     pushd "${deb_base}/dists/${branch}" >/dev/null || exit 1
     info "Generating Release file..."
+    # First create a temporary file with the basic information
     {
         echo "Origin: VyOS"
         echo "Label: ${REPO_OWNER}"
@@ -215,23 +216,28 @@ build_repo() {
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
-        
-        # Generate hashes for all files in the dists directory
-        info "Finding files for hash generation..."
-        # Look in all component/binary-arch directories
-        for comp in ${DEB_COMPONENTS}; do
-            for arch in "${ARCHITECTURES[@]}"; do
-                if [[ -d "${comp}/binary-${arch}" ]]; then
-                    info "Found component directory: ${comp}/binary-${arch}"
-                fi
-            done
+    } > Release.tmp
+    
+    # Look in all component/binary-arch directories
+    info "Finding files for hash generation..."
+    for comp in ${DEB_COMPONENTS}; do
+        for arch in "${ARCHITECTURES[@]}"; do
+            if [[ -d "${comp}/binary-${arch}" ]]; then
+                info "Found component directory: ${comp}/binary-${arch}"
+            fi
         done
+    done
 
+    # Generate hashes for all files and append them directly to the Release file
+    {
         # Generate hashes for all files
         generate_hashes MD5Sum md5sum "." ""
         generate_hashes SHA1 sha1sum "." ""
         generate_hashes SHA256 sha256sum "." ""
-    } > Release
+    } >> Release.tmp
+    
+    # Move the temporary file to the final Release file
+    mv Release.tmp Release
 
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
