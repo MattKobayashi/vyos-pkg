@@ -1,16 +1,11 @@
 ---
-name: "Build TBM VyOS Package Repository"
-
-on:
-  workflow_dispatch:
-
 jobs:
   build-package:
     container:
       env:
         TZ: Australia/Brisbane
       image: vyos/vyos-build:current@sha256:86c792ade183e46c5dc920db9758cd7de5cd24297951cbd6fb0cd7373d74bac7
-    name: Build package
+    name: Build packages
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the `vyos-build` repository
@@ -39,7 +34,7 @@ jobs:
           name: ${{ matrix.package }}
           path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         package:
           - aws-gwlbtun
@@ -57,7 +52,6 @@ jobs:
           - net-snmp
           - netfilter
           - node_exporter
-          - opennhrp
           - openvpn-otp
           - pmacct
           - podman
@@ -111,12 +105,14 @@ jobs:
           - amazon-ssm-agent
           - hsflowd
           - owamp
-  create-repo:
+  publish-repo:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
-    needs: build-package
+    needs:
+      - build-package
+      - build-package-nocontainer
     permissions:
       id-token: write
       pages: write
@@ -171,3 +167,6 @@ jobs:
       - id: deployment
         name: Deploy to GitHub Pages
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+name: "Build TBM VyOS Package Repository"
+on:
+  workflow_dispatch:
