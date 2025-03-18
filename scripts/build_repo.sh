@@ -45,13 +45,14 @@ generate_hashes() {
     local prefix="${4:-}"
     
     echo "${hash_type}:"
-    find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" | sort | while read -r file; do
+    # Use process substitution instead of a pipeline to avoid subshell issues
+    while read -r file; do
         # Skip the Release files themselves
         if [[ "$file" == "Release" || "$file" == "Release.gpg" || "$file" == "InRelease" ]]; then
             continue
         fi
         echo " $(${hash_command} "${base_dir}/${file}" | cut -d' ' -f1) $(wc -c "${base_dir}/${file}" | cut -d' ' -f1) ${prefix}${file}"
-    done
+    done < <(find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" | sort)
 }
 
 log_message() {
@@ -164,6 +165,12 @@ build_repo() {
         generate_hashes SHA256 sha256sum "$(pwd)" ""
     } > Release
 
+    # Verify Release file has hash entries
+    info "Verifying Release file contents..."
+    if ! grep -q "^MD5Sum:" Release || ! grep -q "^ " -A 1 "MD5Sum:" Release; then
+        warning "No MD5Sum entries found in Release file. Repository may be empty or hash generation failed."
+    fi
+    
     info "Signing Release file..."
     export GPG_TTY
     
