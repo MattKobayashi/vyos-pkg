@@ -115,7 +115,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
-    needs: build-package
+    needs: 
+      - build-package
+      - build-package-nocontainer
     permissions:
       id-token: write
       pages: write
