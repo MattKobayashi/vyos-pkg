@@ -10,7 +10,7 @@ readonly SUPPORTED_BRANCHES=("current")
 readonly DEB_COMPONENTS="main"
 readonly SOURCE_DIR="packages"
 readonly GPG_TTY=$(tty)
-readonly ARCHITECTURES=("all" "amd64" "arm64" "i386")
+readonly ARCHITECTURES=("all" "amd64")
 readonly GPG_KEY_ID="${GPG_KEY_ID:-}"  # Optional environment variable for specific key
 
 # Logging configuration
@@ -129,7 +129,12 @@ build_repo() {
         
         # Use -a option to filter by architecture
         if ! dpkg-scanpackages -a "${arch}" "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>&1; then
-            warning "Package scanning for ${arch} may have had issues"
+            # For architecture "all", also try without the -a flag if it fails
+            if [[ "${arch}" == "all" ]] && ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>&1; then
+                warning "Package scanning for ${arch} failed even without architecture filtering"
+            else
+                warning "Package scanning for ${arch} may have had issues"
+            fi
         fi
         
         # Compress package information
@@ -148,7 +153,7 @@ build_repo() {
         echo "Suite: ${branch}"
         echo "Codename: ${branch}"
         echo "Version: 1.0"
-        echo "Architectures: $(echo "${ARCHITECTURES[@]}" | tr ' ' ' ')"
+        echo "Architectures: all amd64"
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
