@@ -5,7 +5,7 @@
         env:
           TZ: Australia/Brisbane
         image: vyos/vyos-build:current@sha256:86c792ade183e46c5dc920db9758cd7de5cd24297951cbd6fb0cd7373d74bac7
-      name: Test package build
+      name: Package build
       runs-on: ubuntu-24.04
       steps:
         - name: Checkout the `vyos-build` repository
@@ -39,7 +39,7 @@
           package:
             - frr_exporter
     test-package-nocontainer:
-      name: Test package build (no container)
+      name: Package build (no container)
       runs-on: ubuntu-24.04
       steps:
         - name: Install dependencies
@@ -80,7 +80,7 @@
     test-repo:
       environment:
         name: github-pages
-      name: Create .deb repository
+      name: .deb repository build
       needs:
         - test-package
         - test-package-nocontainer
