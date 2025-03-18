@@ -1,16 +1,11 @@
 ---
-name: "Build TBM VyOS Package Repository"
-
-on:
-  workflow_dispatch:
-
 jobs:
   build-package:
     container:
       env:
         TZ: Australia/Brisbane
       image: vyos/vyos-build:current@sha256:86c792ade183e46c5dc920db9758cd7de5cd24297951cbd6fb0cd7373d74bac7
-    name: Build package
+    name: Build packages
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout the `vyos-build` repository
@@ -42,32 +37,32 @@ jobs:
       fail-fast: true
       matrix:
         package:
-          # - aws-gwlbtun
-          # - ddclient
+          - aws-gwlbtun
+          - ddclient
           - dropbear
           - ethtool
-          # - frr
-          # - frr_exporter
-          # - hostap
-          # - isc-dhcp
-          # - kea
-          # - keepalived
-          # - linux-kernel
-          # - ndppd
-          # - net-snmp
-          # - netfilter
-          # - node_exporter
-          # - openvpn-otp
-          # - pmacct
-          # - podman
-          # - pyhumps
-          # - radvd
-          # - strongswan
-          # - tacacs
-          # - telegraf
-          # - waagent
-          # - wide-dhcpv6
-          # - xen-guest-agent
+          - frr
+          - frr_exporter
+          - hostap
+          - isc-dhcp
+          - kea
+          - keepalived
+          - linux-kernel
+          - ndppd
+          - net-snmp
+          - netfilter
+          - node_exporter
+          - openvpn-otp
+          - pmacct
+          - podman
+          - pyhumps
+          - radvd
+          - strongswan
+          - tacacs
+          - telegraf
+          - waagent
+          - wide-dhcpv6
+          - xen-guest-agent
   build-package-nocontainer:
     name: Build package
     runs-on: ubuntu-24.04
@@ -106,16 +101,16 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          # - amazon-cloudwatch-agent
-          # - amazon-ssm-agent
+          - amazon-cloudwatch-agent
+          - amazon-ssm-agent
           - hsflowd
           - owamp
-  create-repo:
+  publish-repo:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
-    needs: 
+    needs:
       - build-package
       - build-package-nocontainer
     permissions:
@@ -172,3 +167,6 @@ jobs:
       - id: deployment
         name: Deploy to GitHub Pages
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+name: "Build TBM VyOS Package Repository"
+on:
+  workflow_dispatch:
