@@ -139,7 +139,7 @@
   on:
     pull_request:
       branches:
-        - main
+        - current
       paths:
         - "**.sh"
         - "**.yaml"
