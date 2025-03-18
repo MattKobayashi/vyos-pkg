@@ -4,6 +4,14 @@ title: Unofficial VyOS .deb Packages Repository
 ---
 Since the maintainers of the VyOS project have [decided](https://blog.vyos.io/community-contributors-userbase-and-lts-builds) that they won't permit external access to their own package repositories anymore, I've set up my own unofficial one.
 
+## How to use?
+
+Modify the repository URL when running a VyOS build:
+
+```shell
+deb [trusted=yes] https://mattkobayashi.github.io/vyos-pkg/deb/ current main
+```
+
 ## How to contribute?
 
 Contributions and bug reports are welcomed and appreciated!
