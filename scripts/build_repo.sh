@@ -10,11 +10,13 @@ readonly SUPPORTED_BRANCHES=("current")
 readonly DEB_COMPONENTS="main"
 readonly SOURCE_DIR="packages"
 readonly GPG_TTY=$(tty)
+readonly ARCHITECTURES=("all" "amd64" "arm64" "i386")
+readonly GPG_KEY_ID="${GPG_KEY_ID:-}"  # Optional environment variable for specific key
 
 # Logging configuration
 readonly DEBUG=false
 
-# Check required environment variables
+# Check required environment variables and tools
 check_env_vars() {
     local required_vars=("REPO_OWNER")
     for var in "${required_vars[@]}"; do
@@ -23,16 +25,32 @@ check_env_vars() {
             exit 1
         fi
     done
+    
+    # Verify GPG is properly configured
+    if ! gpg --list-secret-keys >/dev/null 2>&1; then
+        error "No GPG secret keys found. Repository signing will fail."
+    fi
+    
+    if [[ -n "${GPG_KEY_ID}" ]]; then
+        if ! gpg --list-secret-keys "${GPG_KEY_ID}" >/dev/null 2>&1; then
+            error "Specified GPG key ${GPG_KEY_ID} not found"
+        fi
+    fi
 }
 
 generate_hashes() {
     local hash_type="$1"
     local hash_command="$2"
     local base_dir="$3"
+    local prefix="${4:-}"
     
-    echo "${hash_type}:" >&2
-    find "${base_dir}" -type f -printf "%P\n" | while read -r file; do
-        echo " $(${hash_command} "$file" | cut -d' ' -f1) $(wc -c "$file" | cut -d' ' -f1)"
+    echo "${hash_type}:"
+    find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" | sort | while read -r file; do
+        # Skip the Release files themselves
+        if [[ "$file" == "Release" || "$file" == "Release.gpg" || "$file" == "InRelease" ]]; then
+            continue
+        fi
+        echo " $(${hash_command} "${base_dir}/${file}" | cut -d' ' -f1) $(wc -c "${base_dir}/${file}" | cut -d' ' -f1) ${prefix}${file}"
     done
 }
 
@@ -93,57 +111,74 @@ build_repo() {
     local deb_base="${SITE_DIR}/${branch}/deb"
     local deb_pool="${deb_base}/pool/${DEB_COMPONENTS}"
     local deb_dists="${deb_base}/dists/${branch}"
-    local deb_dists_components="${deb_dists}/${DEB_COMPONENTS}/binary-all"
     
-    echo "Building repository for ${branch}..."
+    info "Building repository for ${branch}..."
     
     # Create repository structure and move packages
     mkdir -p "${deb_pool}"
-    mkdir -p "${deb_dists_components}"
     move_debs "${branch}" "${deb_pool}"
     
-    # Generate package information
-    pushd "${deb_base}" >/dev/null || exit 1
-    echo "Scanning packages and creating Packages file..."
-    if ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages" 2>/dev/null; then
-        echo "Error: Package scanning failed"
-        exit 1
-    fi
+    # Create component directories for each architecture
+    for arch in "${ARCHITECTURES[@]}"; do
+        local deb_dists_components="${deb_dists}/${DEB_COMPONENTS}/binary-${arch}"
+        mkdir -p "${deb_dists_components}"
+        
+        # Generate package information for this architecture
+        pushd "${deb_base}" >/dev/null || exit 1
+        info "Scanning packages for architecture ${arch}..."
+        
+        # Use -a option to filter by architecture
+        if ! dpkg-scanpackages -a "${arch}" "pool/${DEB_COMPONENTS}" > "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>&1; then
+            warning "Package scanning for ${arch} may have had issues"
+        fi
+        
+        # Compress package information
+        gzip -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.gz" < "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
+        bzip2 -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.bz2" < "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
+        
+        popd >/dev/null || exit 1
+    done
     
-    # Compress package information
-    gzip -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.gz" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
-    bzip2 -9 > "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages.bz2" < "dists/${branch}/${DEB_COMPONENTS}/binary-all/Packages"
-    
-    # Generate and sign Release file
-    pushd "dists/${branch}/${DEB_COMPONENTS}/binary-all" >/dev/null || exit 1
-    echo "Generating Release file..."
+    # Generate and sign Release file in the correct location (dists/${branch}/)
+    pushd "${deb_base}/dists/${branch}" >/dev/null || exit 1
+    info "Generating Release file..."
     {
         echo "Origin: VyOS"
         echo "Label: ${REPO_OWNER}"
         echo "Suite: ${branch}"
         echo "Codename: ${branch}"
         echo "Version: 1.0"
-        echo "Architectures: all"
+        echo "Architectures: $(echo "${ARCHITECTURES[@]}" | tr ' ' ' ')"
         echo "Components: ${DEB_COMPONENTS}"
         echo "Description: A repository for packages released by ${REPO_OWNER}"
         echo "Date: $(date -Ru)"
-        generate_hashes MD5Sum md5sum "$(pwd)"
-        generate_hashes SHA1 sha1sum "$(pwd)"
-        generate_hashes SHA256 sha256sum "$(pwd)"
+        
+        # Generate hashes for all files in the dists directory
+        generate_hashes MD5Sum md5sum "$(pwd)" ""
+        generate_hashes SHA1 sha1sum "$(pwd)" ""
+        generate_hashes SHA256 sha256sum "$(pwd)" ""
     } > Release
 
-    echo "Signing Release file..."
+    info "Signing Release file..."
     export GPG_TTY
-    if ! gpg --detach-sign --armor > Release.gpg < Release; then
-        echo "Error: GPG signing failed for Release.gpg"
-        exit 1
-    fi
-    if ! gpg --clearsign > InRelease < Release; then
-        echo "Error: GPG signing failed for InRelease"
-        exit 1
+    
+    # Use specified key if available
+    local gpg_sign_cmd="gpg --detach-sign --armor"
+    local gpg_clearsign_cmd="gpg --clearsign"
+    
+    if [[ -n "${GPG_KEY_ID}" ]]; then
+        gpg_sign_cmd="${gpg_sign_cmd} --local-user ${GPG_KEY_ID}"
+        gpg_clearsign_cmd="${gpg_clearsign_cmd} --local-user ${GPG_KEY_ID}"
     fi
     
-    popd >/dev/null || exit 1
+    if ! ${gpg_sign_cmd} > Release.gpg < Release; then
+        error "GPG signing failed for Release.gpg"
+    fi
+    
+    if ! ${gpg_clearsign_cmd} > InRelease < Release; then
+        error "GPG signing failed for InRelease"
+    fi
+    
     popd >/dev/null || exit 1
     
     echo "Repository built successfully for ${branch}"
@@ -171,7 +206,7 @@ main() {
     
     # Verify required tools
     info "Checking required tools"
-    for cmd in dpkg-scanpackages gpg gzip bzip2; do
+    for cmd in dpkg-scanpackages gpg gzip bzip2 find sort; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
             error "Required command '$cmd' not found"
         fi
