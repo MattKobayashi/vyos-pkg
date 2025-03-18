@@ -44,15 +44,34 @@ generate_hashes() {
     local base_dir="$3"
     local prefix="${4:-}"
     
+    info "Generating ${hash_type} hashes for files in ${base_dir}"
+    local file_count=$(find "${base_dir}" -type f -not -path "*/\.*" | wc -l)
+    info "Found ${file_count} files for hashing"
+    
     echo "${hash_type}:"
     # Use process substitution instead of a pipeline to avoid subshell issues
-    while read -r file; do
+    find_result=$(find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" 2>/dev/null | sort)
+    
+    if [[ -z "${find_result}" ]]; then
+        warning "No files found for hashing in ${base_dir}"
+        return
+    fi
+    
+    while IFS= read -r file; do
         # Skip the Release files themselves
         if [[ "$file" == "Release" || "$file" == "Release.gpg" || "$file" == "InRelease" ]]; then
             continue
         fi
-        echo " $(${hash_command} "${base_dir}/${file}" | cut -d' ' -f1) $(wc -c "${base_dir}/${file}" | cut -d' ' -f1) ${prefix}${file}"
-    done < <(find "${base_dir}" -type f -not -path "*/\.*" -printf "%P\n" | sort)
+        
+        # Only calculate hash if the file exists
+        if [[ -f "${base_dir}/${file}" ]]; then
+            local file_hash=$(${hash_command} "${base_dir}/${file}" | cut -d' ' -f1)
+            local file_size=$(wc -c "${base_dir}/${file}" | cut -d' ' -f1)
+            echo " ${file_hash} ${file_size} ${prefix}${file}"
+        else
+            warning "File ${base_dir}/${file} not found when generating hash"
+        fi
+    done <<< "${find_result}"
 }
 
 log_message() {
@@ -160,15 +179,21 @@ build_repo() {
         echo "Date: $(date -Ru)"
         
         # Generate hashes for all files in the dists directory
-        generate_hashes MD5Sum md5sum "$(pwd)" ""
-        generate_hashes SHA1 sha1sum "$(pwd)" ""
-        generate_hashes SHA256 sha256sum "$(pwd)" ""
+        info "Finding files for hash generation..."
+        generate_hashes MD5Sum md5sum "." ""
+        generate_hashes SHA1 sha1sum "." ""
+        generate_hashes SHA256 sha256sum "." ""
     } > Release
 
     # Verify Release file has hash entries
     info "Verifying Release file contents..."
-    if ! grep -q "^MD5Sum:" Release || ! grep -q "^ " -A 1 "MD5Sum:" Release; then
+    if ! grep -q "^MD5Sum:" "./Release" || ! grep -A 1 "MD5Sum:" "./Release" | grep -q "^ "; then
         warning "No MD5Sum entries found in Release file. Repository may be empty or hash generation failed."
+        # Add debug output
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory: $(ls -la)"
+        echo "Content of Release file:"
+        cat ./Release
     fi
     
     info "Signing Release file..."
