@@ -134,7 +134,7 @@ build_repo() {
     local branch="$1"
     
     # Define paths
-    local deb_base="${SITE_DIR}/${branch}/deb"
+    local deb_base="${SITE_DIR}/deb"
     local deb_pool="${deb_base}/pool/${DEB_COMPONENTS}"
     local deb_dists="${deb_base}/dists/${branch}"
     
