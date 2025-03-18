@@ -122,8 +122,6 @@ jobs:
         run: |
           set -eux
           gpg --list-keys | grep $(echo "${{ steps.import_gpg.outputs.fingerprint }}")
-      - name: Setup Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
       - name: Build .deb repository
@@ -133,8 +131,10 @@ jobs:
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
           sudo chown -R $(whoami):$(whoami) _site/
           scripts/build_repo.sh
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+      - name: Upload artifact
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          path: "_site/"
 name: "Build TBM VyOS Package Repository"
 on:
   pull_request:
