@@ -78,8 +78,6 @@ jobs:
         package:
           - hsflowd
   test-repo:
-    environment:
-      name: github-pages
     name: .deb repository build
     needs:
       - test-package
