@@ -4,7 +4,7 @@ jobs:
     container:
       env:
         TZ: Australia/Brisbane
-      image: vyos/vyos-build:current@sha256:337e2f895b296895939b192e6bf6dd38065a0fb86e6193ccfc47534aec7518b5
+      image: vyos/vyos-build:current@sha256:7d2a439497ae735e1ee0e1d17c71c07a89a0cb42113c7c8e6c1421a8d10878fc
     name: Build packages
     runs-on: ubuntu-24.04
     steps:
