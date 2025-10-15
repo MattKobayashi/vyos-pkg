@@ -18,7 +18,7 @@ jobs:
         name: Setup golang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version: "1.25.2"
+          go-version: "1.25.3"
       - env:
           DEB_BUILD_OPTIONS: ${{ matrix.package == 'kea' && 'parallel=1' || 'parallel=auto' }}
         name: Build the package
@@ -60,7 +60,7 @@ jobs:
         name: Setup golang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
         with:
-          go-version: "1.25.2"
+          go-version: "1.25.3"
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
