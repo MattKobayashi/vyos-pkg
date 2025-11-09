@@ -45,11 +45,12 @@ jobs:
       - name: Install dependencies
         run: |
           set -eux
-          python3 -m pip install toml
           sudo apt-get update
           sudo apt-get --no-install-recommends --yes install \
             devscripts \
-            equivs
+            equivs \
+            python3-toml \
+            python3-tomli
       - name: Checkout the `vyos-build` repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
