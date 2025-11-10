@@ -131,7 +131,7 @@ jobs:
           echo REPO_NAME="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)" >> $GITHUB_ENV
       - id: import_gpg
         name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        uses: step-security/ghaction-import-gpg@69c854a83c7f79463f8bdf46772ab09826c560cd # v6.3.1
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
