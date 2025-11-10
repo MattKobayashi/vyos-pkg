@@ -139,8 +139,4 @@ on:
   pull_request:
     branches:
       - current
-    paths:
-      - "**.sh"
-      - "**.yaml"
-      - "**.yml"
   workflow_dispatch:
