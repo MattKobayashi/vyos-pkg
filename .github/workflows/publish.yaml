@@ -75,10 +75,6 @@ jobs:
     name: Build packages
     runs-on: ubuntu-24.04
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
       - name: Install dependencies
         run: |
           set -eux
@@ -129,10 +125,6 @@ jobs:
       pages: write
     runs-on: ubuntu-24.04
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
-        with:
-          egress-policy: audit
       - name: Checkout the vyos-pkg repository
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
       - name: Download the .deb file artifacts
