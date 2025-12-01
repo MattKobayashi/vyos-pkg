@@ -9,13 +9,13 @@ Since the maintainers of the VyOS project have [decided](https://blog.vyos.io/co
 Modify the repository URL when running a VyOS build:
 
 ```shell
-deb [trusted=yes] https://mattkobayashi.github.io/vyos-pkg/deb/ current main
+deb [trusted=yes] https://techbymatt.github.io/vyos-pkg/deb/ current main
 ```
 
 ## How to contribute?
 
 Contributions and bug reports are welcomed and appreciated!
 
-Have a security issue? Please [submit a report](https://github.com/MattKobayashi/vyos-pkg/security/advisories/new).
+Have a security issue? Please [submit a report](https://github.com/techbymatt/vyos-pkg/security/advisories/new).
 
-Want to contribute? Please [create a pull request](https://github.com/MattKobayashi/vyos-pkg/compare).
+Want to contribute? Please [create a pull request](https://github.com/techbymatt/vyos-pkg/compare).

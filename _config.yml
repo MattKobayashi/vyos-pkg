@@ -1,11 +1,11 @@
 ---
 title: vyos-pkg
-email: matthew@kobayashi.au
+email: matthew@tech.bymatt.au
 description: >-
   An unofficial Debian package repository of VyOS packages
-url: https://mattkobayashi.github.io
+url: https://techbymatt.github.io
 baseurl: /vyos-pkg/
-github_username: MattKobayashi
+github_username: techbymatt
 
 # Build settings
 theme: minima
