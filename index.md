@@ -9,7 +9,7 @@ Since the maintainers of the VyOS project have [decided](https://blog.vyos.io/co
 Modify the repository URL when running a VyOS build:
 
 ```shell
-deb [trusted=yes] https://techbymatt.github.io/vyos-pkg/deb/ current main
+deb [trusted=yes] https://techbymatt.github.io/vyos-pkg/deb/ rolling main
 ```
 
 ## How to contribute?
