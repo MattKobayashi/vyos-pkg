@@ -1,33 +1,10 @@
 ---
 jobs:
-  build-container:
-    name: Build container
-    permissions:
-      contents: read # to fetch the repository content
-      id-token: write # for signing attestation(s) with GitHub OIDC Token
-      packages: write
-    secrets:
-      registry-auths: |
-        - registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-    uses: docker/github-builder/.github/workflows/build.yml@v1
-    with:
-      cache: true
-      cache-mode: max
-      context: vyos-build/docker
-      meta-images: ghcr.io/techbymatt/vyos-build
-      meta-tags: |
-        type=raw,value=rolling
-      output: image 
-      platforms: linux/amd64,linux/arm64
-      push: true
   build-package:
     container:
       env:
         TZ: Australia/Brisbane
       image: ghcr.io/techbymatt/vyos-build:rolling
-    needs: [build-container]
     name: Build package
     permissions:
       packages: read
