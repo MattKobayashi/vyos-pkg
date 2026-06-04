@@ -11,10 +11,10 @@ jobs:
       packages: read
     runs-on: ${{ matrix.runner_os }}
     steps:
-      - name: Random delay (1–2 minutes)
+      - name: Random delay (1–5 minutes)
         env:
           MIN_DELAY: 60
-          MAX_DELAY: 120
+          MAX_DELAY: 300
         run: |
           DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
           echo "Sleeping for $DELAY seconds..."
