@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Constants
 readonly SITE_DIR="_site"
-readonly SUPPORTED_BRANCHES=("current")
+readonly SUPPORTED_BRANCHES=("rolling")
 readonly DEB_COMPONENTS="main"
 readonly SOURCE_DIR="packages"
 readonly GPG_TTY=$(tty)
