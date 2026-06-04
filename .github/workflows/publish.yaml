@@ -1,11 +1,11 @@
 ---
 jobs:
-  build-package:
+  build:
     container:
       env:
         TZ: Australia/Brisbane
       image: ghcr.io/techbymatt/vyos-build:rolling
-    name: Build package
+    name: Build
     permissions:
       packages: read
     runs-on: ${{ matrix.runner_os }}
@@ -81,8 +81,8 @@ jobs:
           - arch: arm64
             runner_os: ubuntu-24.04-arm
     timeout-minutes: 180
-  build-package-nocontainer:
-    name: Build package
+  build-nocontainer:
+    name: Build
     runs-on: ubuntu-24.04
     steps:
       - name: Install dependencies
@@ -129,14 +129,14 @@ jobs:
           - arch: arm64
             runner_os: ubuntu-24.04-arm
     timeout-minutes: 150
-  publish-repo:
+  publish:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    name: Create .deb repository
+    name: Publish
     needs:
-      - build-package
-      - build-package-nocontainer
+      - build
+      - build-nocontainer
     permissions:
       id-token: write
       pages: write
@@ -192,7 +192,7 @@ jobs:
         name: Deploy to GitHub Pages
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
     timeout-minutes: 10
-name: "Publish TBM VyOS Package Repository"
+name: Repository
 on:
   schedule:
     - cron: "0 4 1,8,15,22,29 * *"
