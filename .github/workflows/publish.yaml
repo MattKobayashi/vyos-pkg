@@ -11,11 +11,14 @@ jobs:
       packages: read
     runs-on: ${{ matrix.runner_os }}
     steps:
-      - name: Random delay
+      - name: Random delay (1–2 minutes)
+        env:
+          MIN_DELAY: 60
+          MAX_DELAY: 120
         run: |
-          delay=$((RANDOM % 300))
-          echo "Delaying for $delay seconds"
-          sleep $delay
+          DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
+          echo "Sleeping for $DELAY seconds..."
+          sleep $DELAY
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
