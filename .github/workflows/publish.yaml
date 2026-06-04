@@ -11,7 +11,7 @@ jobs:
         - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-    uses: docker/github-builder/.github/workflows/build.yml@v1
+    uses: docker/github-builder/.github/workflows/build.yml@17bd7d64200cae4ba58ffc099934e8012ae320f2 # v1
     with:
       cache: true
       cache-mode: max
