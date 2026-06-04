@@ -11,7 +11,7 @@ jobs:
       cache: true
       cache-mode: max
       context: vyos-build/docker
-      meta-images: techbymatt/vyos-build
+      meta-images: ghcr.io/techbymatt/vyos-build
       meta-tags: |
         type=raw,value=rolling
       output: image 
