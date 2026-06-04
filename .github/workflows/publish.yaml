@@ -5,11 +5,17 @@ jobs:
       env:
         TZ: Australia/Brisbane
       image: ghcr.io/techbymatt/vyos-build:rolling
+      options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
     name: Build
     permissions:
       packages: read
     runs-on: ${{ matrix.runner_os }}
     steps:
+      - name: Random delay
+        run: |
+          delay=$((RANDOM % 300))
+          echo "Delaying for $delay seconds"
+          sleep $delay
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
