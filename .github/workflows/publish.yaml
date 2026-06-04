@@ -1,13 +1,70 @@
 ---
 jobs:
-  build-packages:
+  build-container:
+    name: Build container
+    runs-on: ${{ matrix.runner_os }}
+    steps:
+      - name: Set up Docker
+        uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0
+      - name: Log into registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+      - name: Checkout the vyos-pkg repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Checkout the vyos-build repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          path: vyos-build
+          ref: rolling
+          repository: vyos/vyos-build
+      - id: meta
+        name: Extract Docker metadata
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          images: ghcr.io/techbymatt/vyos-build
+          tags: |
+            type=raw,value=rolling
+      - name: Build and push Docker image
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: vyos-build/docker
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner_os: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64/v8
+            runner_os: ubuntu-24.04-arm
+  build-package:
     container:
       env:
         TZ: Australia/Brisbane
-      image: vyos/vyos-build:rolling@sha256:d8c24a4c117efe8868a182ccf9e70bf78a7d6f329f2e7be63c405c6975031256
-    name: Build packages
-    runs-on: ubuntu-24.04
+      image: ghcr.io/techbymatt/vyos-build:rolling
+    needs: [build-container]
+    name: Build package
+    runs-on: ${{ matrix.runner_os }}
     steps:
+      - name: Set up Docker
+        uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0
+      - name: Log into registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+      - name: Checkout the vyos-pkg repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -31,8 +88,9 @@ jobs:
           name: ${{ matrix.package }}
           path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
+        arch: [amd64, arm64]
         package:
           - amazon-cloudwatch-agent
           - amazon-ssm-agent
@@ -72,9 +130,14 @@ jobs:
           - wide-dhcpv6
           - xen-guest-agent
           - zerotier-one
-    timeout-minutes: 120
-  build-packages-nocontainer:
-    name: Build packages
+        include:
+          - arch: amd64
+            runner_os: ubuntu-24.04
+          - arch: arm64
+            runner_os: ubuntu-24.04-arm
+    timeout-minutes: 180
+  build-package-nocontainer:
+    name: Build package
     runs-on: ubuntu-24.04
     steps:
       - name: Install dependencies
@@ -102,6 +165,7 @@ jobs:
         run: |
           set -eux
           python3 build.py
+        timeout-minutes: 120
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -111,17 +175,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        arch: [amd64, arm64]
         package:
           - owamp
-    timeout-minutes: 120
+        include:
+          - arch: amd64
+            runner_os: ubuntu-24.04
+          - arch: arm64
+            runner_os: ubuntu-24.04-arm
+    timeout-minutes: 150
   publish-repo:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     name: Create .deb repository
     needs:
-      - build-packages
-      - build-packages-nocontainer
+      - build-package
+      - build-package-nocontainer
     permissions:
       id-token: write
       pages: write
