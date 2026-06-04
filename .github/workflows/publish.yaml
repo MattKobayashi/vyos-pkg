@@ -36,7 +36,6 @@ jobs:
           cache-to: type=gha,mode=max
           context: vyos-build/docker
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: ${{ matrix.platform }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
     strategy:
@@ -45,10 +44,8 @@ jobs:
         arch: [amd64, arm64]
         include:
           - arch: amd64
-            platform: linux/amd64
             runner_os: ubuntu-24.04
           - arch: arm64
-            platform: linux/arm64
             runner_os: ubuntu-24.04-arm
   build-package:
     container:
