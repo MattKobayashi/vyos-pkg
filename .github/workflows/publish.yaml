@@ -2,6 +2,8 @@
 jobs:
   build-container:
     name: Build container
+    permissions:
+      packages: write
     runs-on: ${{ matrix.runner_os }}
     steps:
       - name: Set up Docker
