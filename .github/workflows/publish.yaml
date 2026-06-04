@@ -4,7 +4,7 @@ jobs:
     name: Build container
     permissions:
       packages: write
-    runs-on: ${{ matrix.runner_os }}
+    runs-on: ubuntu-24.04
     steps:
       - name: Set up Docker
         uses: docker/setup-docker-action@0234bb73ccb40f0c430b795634f9247e2b5c2d23 # v5.2.0
@@ -14,41 +14,23 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
           username: ${{ github.actor }}
-      - name: Checkout the vyos-pkg repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           path: vyos-build
           ref: rolling
           repository: vyos/vyos-build
-      - id: meta
-        name: Extract Docker metadata
-        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
-        with:
-          images: ghcr.io/techbymatt/vyos-build
-          tags: |
-            type=raw,value=rolling
       - name: Build and push Docker image
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        uses: docker/github-builder/.github/workflows/build.yml@v1
         with:
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache: true
+          cache-mode: max
           context: vyos-build/docker
-          labels: ${{ steps.meta.outputs.labels }}
+          meta-images: techbymatt/vyos-build
+          meta-tags: |
+            type=raw,value=rolling
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64, arm64]
-        include:
-          - arch: amd64
-            platform:
-            runner_os: ubuntu-24.04
-          - arch: arm64
-            platform: linux/arm64
-            runner_os: ubuntu-24.04-arm
   build-package:
     container:
       env:
