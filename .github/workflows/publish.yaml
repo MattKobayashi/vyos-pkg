@@ -55,6 +55,8 @@ jobs:
       image: ghcr.io/techbymatt/vyos-build:rolling
     needs: [build-container]
     name: Build package
+    permissions:
+      packages: read
     runs-on: ${{ matrix.runner_os }}
     steps:
       - name: Set up Docker
