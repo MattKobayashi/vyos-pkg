@@ -12,16 +12,18 @@ jobs:
     name: Build
     permissions:
       packages: read
-    runs-on: ${{ matrix.runner_os }}
+    runs-on:
+      group: ${{ matrix.runner_group }}
+      labels: ${{ matrix.runner_label }}
     steps:
-      - name: Random delay (0-5 minutes)
-        env:
-          MIN_DELAY: 0
-          MAX_DELAY: 300
-        run: |
-          DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
-          echo "Sleeping for $DELAY seconds..."
-          sleep $DELAY
+      # - name: Random delay (0-5 minutes)
+      #   env:
+      #     MIN_DELAY: 0
+      #     MAX_DELAY: 300
+      #   run: |
+      #     DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
+      #     echo "Sleeping for $DELAY seconds..."
+      #     sleep $DELAY
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -89,13 +91,17 @@ jobs:
           - zerotier-one
         include:
           - arch: amd64
-            runner_os: ubuntu-24.04
+            runner_group: tbm-vyos
+            runner_label: ubuntu-24.04-64core
           - arch: arm64
-            runner_os: ubuntu-24.04-arm
+            runner_group: tbm-vyos
+            runner_label: ubuntu-24.04-32core-arm
     timeout-minutes: 180
   build-nocontainer:
     name: Build
-    runs-on: ubuntu-24.04
+    runs-on:
+      group: ${{ matrix.runner_group }}
+      labels: ${{ matrix.runner_label }}
     steps:
       - name: Install dependencies
         run: |
@@ -137,9 +143,11 @@ jobs:
           - owamp
         include:
           - arch: amd64
-            runner_os: ubuntu-24.04
+            runner_group: tbm-vyos
+            runner_label: ubuntu-24.04-64core
           - arch: arm64
-            runner_os: ubuntu-24.04-arm
+            runner_group: tbm-vyos
+            runner_label: ubuntu-24.04-32core-arm
     timeout-minutes: 150
   publish:
     environment:
