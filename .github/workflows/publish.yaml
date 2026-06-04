@@ -6,6 +6,11 @@ jobs:
       contents: read # to fetch the repository content
       id-token: write # for signing attestation(s) with GitHub OIDC Token
       packages: write
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
     uses: docker/github-builder/.github/workflows/build.yml@v1
     with:
       cache: true
