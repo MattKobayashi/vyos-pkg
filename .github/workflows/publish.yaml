@@ -9,27 +9,50 @@ jobs:
     defaults:
       run:
         shell: bash
-    name: Build
+    name: Build (container)
     permissions:
       packages: read
-    runs-on:
-      group: ${{ matrix.runner_group }}
-      labels: ${{ matrix.runner_label }}
+    runs-on: ${{ matrix.runner_label }}
     steps:
-      # - name: Random delay (0-5 minutes)
-      #   env:
-      #     MIN_DELAY: 0
-      #     MAX_DELAY: 300
-      #   run: |
-      #     DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
-      #     echo "Sleeping for $DELAY seconds..."
-      #     sleep $DELAY
+      - name: Download patch files
+        env:
+          GH_TOKEN: ${{ secrets.TBM_VYOS_PATCH_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "TBM_VYOS_PATCH_TOKEN is required to read techbymatt/tbm-vyos-patch" >&2
+            exit 1
+          fi
+ 
+          sudo apt update
+          sudo apt install --no-install-recommends --yes gh
+  
+          mkdir patch/
+          for file in \
+            vyos-1x_changes.patch \
+            vyos-1x_new.patch \
+            vyos-build_changes.patch \
+            vyos-build_new.patch; do
+            gh api \
+              --header "Accept: application/vnd.github.raw" \
+              "/repos/techbymatt/tbm-vyos-patch/contents/${file}" \
+              > "patch/${file}"
+          done
+ 
+          echo ""
+          echo "Contents of $(pwd)/patch:"
+          ls -halp patch/
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           path: vyos-build
           ref: rolling
           repository: vyos/vyos-build
+      - id: patch_vyos_build
+        name: Patch vyos-build
+        run: |
+          patch -p1 < ../patch/vyos-build_changes.patch
+          patch -p1 < ../patch/vyos-build_new.patch
+        working-directory: vyos-build
       - name: Setup golang
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
@@ -92,16 +115,14 @@ jobs:
         include:
           - arch: amd64
             runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-64core
+            runner_label: ubuntu-24.04
           - arch: arm64
             runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-32core-arm
+            runner_label: ubuntu-24.04-arm
     timeout-minutes: 180
   build-nocontainer:
-    name: Build
-    runs-on:
-      group: ${{ matrix.runner_group }}
-      labels: ${{ matrix.runner_label }}
+    name: Build (no container)
+    runs-on: ${{ matrix.runner_label }}
     steps:
       - name: Install dependencies
         run: |
@@ -113,12 +134,45 @@ jobs:
             equivs \
             python3-toml \
             python3-tomli
+      - name: Download patch files
+        env:
+          GH_TOKEN: ${{ secrets.TBM_VYOS_PATCH_TOKEN }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "TBM_VYOS_PATCH_TOKEN is required to read techbymatt/tbm-vyos-patch" >&2
+            exit 1
+          fi
+ 
+          sudo apt update
+          sudo apt install --no-install-recommends --yes gh
+  
+          mkdir patch/
+          for file in \
+            vyos-1x_changes.patch \
+            vyos-1x_new.patch \
+            vyos-build_changes.patch \
+            vyos-build_new.patch; do
+            gh api \
+              --header "Accept: application/vnd.github.raw" \
+              "/repos/techbymatt/tbm-vyos-patch/contents/${file}" \
+              > "patch/${file}"
+          done
+ 
+          echo ""
+          echo "Contents of $(pwd)/patch:"
+          ls -halp patch/
       - name: Checkout the vyos-build repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           path: vyos-build
           ref: rolling
           repository: vyos/vyos-build
+      - id: patch_vyos_build
+        name: Patch vyos-build
+        run: |
+          patch -p1 < ../patch/vyos-build_changes.patch
+          patch -p1 < ../patch/vyos-build_new.patch
+        working-directory: vyos-build
       - name: Setup golang
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
@@ -143,11 +197,9 @@ jobs:
           - owamp
         include:
           - arch: amd64
-            runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-64core
+            runner_label: ubuntu-24.04
           - arch: arm64
-            runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-32core-arm
+            runner_label: ubuntu-24.04-arm
     timeout-minutes: 150
   publish:
     environment:
@@ -182,9 +234,11 @@ jobs:
       - name: Insert environment variables
         run: |
           set -eux
-          echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)" >> $GITHUB_ENV
-          echo REPO_OWNER="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f1)" >> $GITHUB_ENV
-          echo REPO_NAME="$(echo ${GITHUB_REPOSITORY} | cut -d/ -f2)" >> $GITHUB_ENV
+          {
+            echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)"
+            echo REPO_OWNER="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f1)"
+            echo REPO_NAME="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f2)"
+          } >> "$GITHUB_ENV"
       - id: import_gpg
         name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
@@ -194,7 +248,7 @@ jobs:
       - name: Confirm GPG key is loaded
         run: |
           set -eux
-          gpg --list-keys | grep $(echo "${{ steps.import_gpg.outputs.fingerprint }}")
+          gpg --list-keys | grep "${{ steps.import_gpg.outputs.fingerprint }}"
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Build with Jekyll
@@ -204,7 +258,7 @@ jobs:
           set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
-          sudo chown -R $(whoami):$(whoami) _site/
+          sudo chown -R "$(whoami):$(whoami)" _site/
           scripts/build_repo.sh
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
