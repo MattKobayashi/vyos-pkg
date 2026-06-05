@@ -12,18 +12,8 @@ jobs:
     name: Build (container)
     permissions:
       packages: read
-    runs-on:
-      group: ${{ matrix.runner_group }}
-      labels: ${{ matrix.runner_label }}
+    runs-on: ${{ matrix.runner_label }}
     steps:
-      # - name: Random delay (0-5 minutes)
-      #   env:
-      #     MIN_DELAY: 0
-      #     MAX_DELAY: 300
-      #   run: |
-      #     DELAY=$((MIN_DELAY + RANDOM % (MAX_DELAY - MIN_DELAY + 1)))
-      #     echo "Sleeping for $DELAY seconds..."
-      #     sleep $DELAY
       - name: Download patch files
         env:
           GH_TOKEN: ${{ secrets.TBM_VYOS_PATCH_TOKEN }}
@@ -67,68 +57,68 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26.4"
-      - name: Build the packages
+      - name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
-          PACKAGES=(
-            amazon-cloudwatch-agent
-            amazon-ssm-agent
-            aws-gwlbtun
-            bash-completion
-            blackbox_exporter
-            ddclient
-            dropbear
-            ethtool
-            frr
-            frr_exporter
-            hostap
-            hsflowd
-            isc-dhcp
-            isc-kea
-            keepalived
-            libnss-mapuser
-            libpam-radius-auth
-            linux-kernel
-            ndppd
-            net-snmp
-            netfilter
-            node_exporter
-            openvpn-otp
-            podman
-            pyhumps
-            radvd
-            salt
-            strongswan
-            tacacs
-            telegraf
-            udp-broadcast-relay
-            unionfs-fuse
-            vpp
-            vyos-1x
-            waagent
-            wide-dhcpv6
-            xen-guest-agent
-            zerotier-one
-          )
-
-          cd vyos-build/scripts/package-build
-          printf "%s\n" "${PACKAGES[@]}" | xargs -n1 -P0 -I {} bash -c 'echo "Starting build for {}"; cd "{}" && python3 build.py'
+          set -eux
+          sudo apt-get update
+          python3 build.py
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: packages-build-${{ matrix.arch }}
-          path: vyos-build/scripts/package-build/*/*.deb
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
+        package:
+          - amazon-cloudwatch-agent
+          - amazon-ssm-agent
+          - aws-gwlbtun
+          - bash-completion
+          - blackbox_exporter
+          - ddclient
+          - dropbear
+          - ethtool
+          - frr
+          - frr_exporter
+          - hostap
+          - hsflowd
+          - isc-dhcp
+          - isc-kea
+          - keepalived
+          - libnss-mapuser
+          - libpam-radius-auth
+          - linux-kernel
+          - ndppd
+          - net-snmp
+          - netfilter
+          - node_exporter
+          - openvpn-otp
+          - podman
+          - pyhumps
+          - radvd
+          - salt
+          - strongswan
+          - tacacs
+          - telegraf
+          - udp-broadcast-relay
+          - unionfs-fuse
+          - vpp
+          - vyos-1x
+          - waagent
+          - wide-dhcpv6
+          - xen-guest-agent
+          - zerotier-one
         include:
           - arch: amd64
             runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-64core
+            runner_label: ubuntu-24.04
           - arch: arm64
             runner_group: tbm-vyos
-            runner_label: ubuntu-24.04-32core-arm
+            runner_label: ubuntu-24.04-arm
     timeout-minutes: 180
   build-nocontainer:
     name: Build (no container)
@@ -187,28 +177,27 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26.4"
-      - name: Build the packages
+      - name: Build the package
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
-          PACKAGES=(
-            owamp
-          )
-
-          cd vyos-build/scripts/package-build
-          printf "%s\n" "${PACKAGES[@]}" | xargs -n1 -P0 -I {} bash -c 'echo "Starting build for {}"; cd "{}" && python3 build.py'
+          set -eux
+          python3 build.py
         timeout-minutes: 120
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: packages-build-nocontainer-${{ matrix.arch }}
-          path: vyos-build/scripts/package-build/*/*.deb
+          name: ${{ matrix.package }}
+          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
     strategy:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
+        package:
+          - owamp
         include:
           - arch: amd64
-            runner_label: ubuntu-latest
+            runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
     timeout-minutes: 150
