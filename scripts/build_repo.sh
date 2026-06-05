@@ -41,10 +41,7 @@ check_env_vars() {
 log_message() {
 	local level="$1"
 	local message="$2"
-	echo "${level}: ${message}"
-	if ${DEBUG}; then
-		echo "${level}: ${message}" >&2
-	fi
+	echo "${level}: ${message}" >&2
 }
 
 error() {
@@ -112,9 +109,9 @@ build_repo() {
 		info "Scanning packages for architecture ${arch}..."
 
 		# Use -a option to filter by architecture
-		if ! dpkg-scanpackages -a "${arch}" "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>&1; then
+		if ! dpkg-scanpackages -a "${arch}" "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>/dev/null; then
 			# For architecture "all", also try without the -a flag if it fails
-			if [[ "${arch}" == "all" ]] && ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>&1; then
+			if [[ "${arch}" == "all" ]] && ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>/dev/null; then
 				warning "Package scanning for ${arch} failed even without architecture filtering"
 			else
 				warning "Package scanning for ${arch} may have had issues"
@@ -127,6 +124,17 @@ build_repo() {
 
 		popd >/dev/null || exit 1
 	done
+
+	# Generate source package index
+	local deb_dists_source="${deb_dists}/${DEB_COMPONENTS}/source"
+	mkdir -p "${deb_dists_source}"
+
+	pushd "${deb_base}" >/dev/null || exit 1
+	info "Scanning source packages..."
+	dpkg-scansources "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/source/Sources" 2>/dev/null || true
+	gzip -9 >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.gz" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
+	bzip2 -9 >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.bz2" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
+	popd >/dev/null || exit 1
 
 	# Generate and sign Release file in the correct location (dists/${branch}/)
 	pushd "${deb_base}/dists/${branch}" >/dev/null || exit 1
@@ -176,19 +184,19 @@ build_repo() {
 	export GPG_TTY
 
 	# Use specified key if available
-	local gpg_sign_cmd="gpg --detach-sign --armor"
-	local gpg_clearsign_cmd="gpg --clearsign"
+	local gpg_sign_cmd=(gpg --batch --detach-sign --armor)
+	local gpg_clearsign_cmd=(gpg --batch --clearsign)
 
 	if [[ -n "${GPG_KEY_ID}" ]]; then
-		gpg_sign_cmd="${gpg_sign_cmd} --local-user ${GPG_KEY_ID}"
-		gpg_clearsign_cmd="${gpg_clearsign_cmd} --local-user ${GPG_KEY_ID}"
+		gpg_sign_cmd+=(--local-user "${GPG_KEY_ID}")
+		gpg_clearsign_cmd+=(--local-user "${GPG_KEY_ID}")
 	fi
 
-	if ! ${gpg_sign_cmd} >Release.gpg <Release; then
+	if ! "${gpg_sign_cmd[@]}" >Release.gpg <Release; then
 		error "GPG signing failed for Release.gpg"
 	fi
 
-	if ! ${gpg_clearsign_cmd} >InRelease <Release; then
+	if ! "${gpg_clearsign_cmd[@]}" >InRelease <Release; then
 		error "GPG signing failed for InRelease"
 	fi
 
@@ -219,7 +227,7 @@ main() {
 
 	# Verify required tools
 	info "Checking required tools"
-	for cmd in dpkg-scanpackages gpg gzip bzip2 find sort awk md5sum sha1sum sha256sum; do
+	for cmd in dpkg-scanpackages dpkg-scansources gpg gzip bzip2 find sort awk md5sum sha1sum sha256sum; do
 		if ! command -v "$cmd" >/dev/null 2>&1; then
 			error "Required command '$cmd' not found"
 		fi
