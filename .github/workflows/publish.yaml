@@ -151,7 +151,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-    timeout-minutes: 180
+    timeout-minutes: 120
   build-extra:
     container:
       env:
