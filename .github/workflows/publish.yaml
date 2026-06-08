@@ -70,7 +70,7 @@ jobs:
           python3 build.py --packages linux-kernel
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Build the Linux modules packages (firmware)
+        name: Build the module packages (firmware)
         run: |
           python3 build.py --packages i40e
           python3 build.py --packages iavf
@@ -84,7 +84,7 @@ jobs:
           python3 build.py --packages realtek-r8126
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Build the Linux modules packages (software)
+        name: Build the module packages (software)
         run: |
           python3 build.py --packages accel-ppp-ng
           python3 build.py --packages ipt-netflow
