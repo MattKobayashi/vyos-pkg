@@ -128,6 +128,7 @@ jobs:
           - keepalived
           - libnss-mapuser
           - libpam-radius-auth
+          - linux-kernel
           - linux-firmware
           - mlnx
           - nat-rtsp
@@ -157,46 +158,49 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-          - cmd: python3 build.py --packages accel-ppp-ng linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages accel-ppp-ng
             package: accel-ppp-ng
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages i40e linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages i40e
             package: i40e
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages iavf linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages iavf
             package: iavf
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ice linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages ice
             package: ice
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages igb linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages igb
             package: igb
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ipt-netflow linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages ipt-netflow
             package: ipt-netflow
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ixgbe linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages ixgbe
             package: ixgbe
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ixgbevf linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages ixgbevf
             package: ixgbevf
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages jool linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages jool
             package: jool
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-firmware linux-kernel
+          - cmd: python3 build.py --packages linux-kernel
+            package: linux-kernel
+            working-directory: vyos-build/scripts/package-build/linux-kernel
+          - cmd: ./build-kernel.sh & python3 build.py --packages linux-firmware
             package: linux-firmware
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel mlnx
+          - cmd: ./build-kernel.sh & python3 build.py --packages mlnx
             package: mlnx
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel nat-rtsp
+          - cmd: ./build-kernel.sh & python3 build.py --packages nat-rtsp
             package: nat-rtsp
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel qat
+          - cmd: ./build-kernel.sh & python3 build.py --packages qat
             package: qat
             working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel realtek-r8126
+          - cmd: ./build-kernel.sh & python3 build.py --packages realtek-r8126
             package: realtek-r8126
             working-directory: vyos-build/scripts/package-build/linux-kernel
     timeout-minutes: 180
