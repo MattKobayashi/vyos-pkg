@@ -68,7 +68,7 @@ jobs:
         run: |
           sudo apt-get update
           ${{ matrix.cmd }}
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
+        working-directory: ${{ matrix.working-directory }}
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -145,34 +145,49 @@ jobs:
             runner_label: ubuntu-24.04-arm
           - cmd: python3 build.py --packages accel-ppp-ng
             package: accel-ppp-ng
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages i40e
             package: i40e
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages iavf
             package: iavf
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages ice
             package: ice
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages igb
             package: igb
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages ipt-netflow
             package: ipt-netflow
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages ixgbe
             package: ixgbe
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages ixgbevf
             package: ixgbevf
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages jool
             package: jool
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages linux-firmware
             package: linux-firmware
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages linux-kernel
             package: linux-kernel
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages mlnx
             package: mlnx
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages nat-rtsp
             package: nat-rtsp
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages qat
             package: qat
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages realtek-r8126
             package: realtek-r8126
+            working-directory: vyos-build/scripts/package-build/linux-kernel
     timeout-minutes: 180
   build-extra:
     container:
