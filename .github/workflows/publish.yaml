@@ -279,7 +279,6 @@ jobs:
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
-          set -eux
           python3 build.py
         timeout-minutes: 120
       - name: Upload the .deb files as artifacts
@@ -329,7 +328,6 @@ jobs:
           path: packages/rolling
       - name: Install required packages
         run: |
-          set -eux
           sudo apt-get update
           sudo apt-get --no-install-recommends --yes install \
             jq \
@@ -339,7 +337,6 @@ jobs:
             dpkg-dev
       - name: Insert environment variables
         run: |
-          set -eux
           {
             echo GNUPGHOME="$(mktemp -d /tmp/pgpkeys-XXXXXX)"
             echo REPO_OWNER="$(echo "${GITHUB_REPOSITORY}" | cut -d/ -f1)"
@@ -353,7 +350,6 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Confirm GPG key is loaded
         run: |
-          set -eux
           gpg --list-keys | grep "${{ steps.import_gpg.outputs.fingerprint }}"
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -361,11 +357,13 @@ jobs:
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
       - name: Build .deb repository
         run: |
-          set -eux
           export GPG_FINGERPRINT="${{ steps.import_gpg.outputs.fingerprint }}"
           export ORIGIN="${{ steps.import_gpg.outputs.name }}"
           sudo chown -R "$(whoami):$(whoami)" _site/
           scripts/build_repo.sh
+      - name: Delete scripts/ repo
+        run: |
+          rm -r scripts
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
       - id: deployment
