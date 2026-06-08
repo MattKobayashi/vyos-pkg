@@ -58,11 +58,10 @@ jobs:
         with:
           go-version: "1.26.4"
       - name: Build the package
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
-          set -eux
           sudo apt-get update
           python3 build.py
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -114,12 +113,111 @@ jobs:
           - zerotier-one
         include:
           - arch: amd64
-            runner_group: tbm-vyos
             runner_label: ubuntu-24.04
           - arch: arm64
-            runner_group: tbm-vyos
             runner_label: ubuntu-24.04-arm
     timeout-minutes: 180
+  build-extra:
+    container:
+      env:
+        TZ: Australia/Brisbane
+      image: ghcr.io/techbymatt/vyos-build:rolling
+      options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
+    defaults:
+      run:
+        shell: bash
+    name: Build (extra)
+    permissions:
+      packages: read
+    runs-on: ${{ matrix.runner_label }}
+    steps:
+      - name: Checkout the package repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          path: packages/${{ matrix.package }}
+          ref: rolling
+          repository: vyos/${{ matrix.package }}
+      - if: ${{ matrix.deps }}
+        name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ${{ matrix.deps }}
+      - name: Build the package
+        run: |
+          sudo apt-get update
+          ${{ matrix.cmd }}
+        working-directory: packages/${{ matrix.package }}
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: ${{ matrix.package }}
+          path: packages/**.deb
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        package:
+          - hvinfo
+          - ipaddrcheck
+          - libnss-mapuser
+          - libnss-tacplus
+          - libpam-radius-auth
+          - libpam-tacplus
+          - libtacplus-map
+          - live-boot
+          - vyatta-bash
+          - vyatta-biosdevname
+          - vyatta-cfg
+        include:
+          - arch: amd64
+            runner_label: ubuntu-24.04
+          - arch: arm64
+            runner_label: ubuntu-24.04-arm
+          - cmd: |
+              dpkg-buildpackage -uc -us -tc -b
+            deps: gnat gprbuild
+            package: hvinfo
+          - cmd: |
+              dpkg-buildpackage -uc -us -tc -b
+            deps: check libcidr-dev
+            package: ipaddrcheck
+          - cmd: |
+              dpkg-buildpackage -uc -us -tc -b
+            deps: libaudit-dev
+            package: libnss-mapuser
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: libaudit-dev libpam-tacplus-dev libtac-dev libtacplus-map-dev
+            package: libnss-tacplus
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: libaudit-dev libcap-dev libpam-dev
+            package: libpam-radius-auth
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: autoconf-archive libaudit-dev libpam-dev libssl-dev libtacplus-map-dev
+            package: libpam-tacplus
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: autoconf-archive libaudit-dev
+            package: libtacplus-map
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            package: live-boot
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: bison libncurses5-dev
+            package: vyatta-bash
+          - cmd: |
+              dpkg-buildpackage -us -uc
+            deps: libpci-dev
+            package: vyatta-biosdevname
+          - cmd: |
+              dpkg-buildpackage -uc -us -tc -b
+            deps: bison flex libboost-filesystem-dev libglib2.0-dev
+            package: vyatta-cfg
+    timeout-minutes: 10
   build-nocontainer:
     name: Build (no container)
     runs-on: ${{ matrix.runner_label }}
