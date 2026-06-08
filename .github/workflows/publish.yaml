@@ -68,6 +68,7 @@ jobs:
           if-no-files-found: error
           name: ${{ matrix.package }}
           path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.buildinfo
             vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
             vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
             vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
@@ -158,6 +159,7 @@ jobs:
           if-no-files-found: error
           name: ${{ matrix.package }}
           path: |
+            packages/*.buildinfo
             packages/*.changes
             packages/*.deb
             packages/*.dsc
@@ -281,14 +283,15 @@ jobs:
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
+          sudo apt-get update
           python3 build.py
-        timeout-minutes: 120
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
           path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.buildinfo
             vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
             vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
             vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
@@ -307,7 +310,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-    timeout-minutes: 10
+    timeout-minutes: 30
   publish:
     environment:
       name: github-pages
