@@ -298,7 +298,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-    timeout-minutes: 150
+    timeout-minutes: 10
   publish:
     environment:
       name: github-pages
