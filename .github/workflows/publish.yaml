@@ -318,6 +318,7 @@ jobs:
     name: Publish
     needs:
       - build
+      - build-extra
       - build-nocontainer
     permissions:
       id-token: write
