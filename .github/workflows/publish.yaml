@@ -106,7 +106,6 @@ jobs:
           - pyhumps
           - radvd
           - salt
-          - strongswan
           - tacacs
           - telegraf
           - udp-broadcast-relay
@@ -302,6 +301,7 @@ jobs:
         arch: [amd64, arm64]
         package:
           - owamp
+          - strongswan
         include:
           - arch: amd64
             runner_label: ubuntu-24.04
