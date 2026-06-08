@@ -118,6 +118,7 @@ jobs:
           - keepalived
           - libnss-mapuser
           - libpam-radius-auth
+          - linux-kernel
           - ndppd
           - net-snmp
           - netfilter
