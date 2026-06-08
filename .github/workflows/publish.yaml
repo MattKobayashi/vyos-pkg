@@ -22,10 +22,10 @@ jobs:
             echo "TBM_VYOS_PATCH_TOKEN is required to read techbymatt/tbm-vyos-patch" >&2
             exit 1
           fi
- 
+
           sudo apt update
           sudo apt install --no-install-recommends --yes gh
-  
+
           mkdir patch/
           for file in \
             vyos-1x_changes.patch \
@@ -37,7 +37,7 @@ jobs:
               "/repos/techbymatt/tbm-vyos-patch/contents/${file}" \
               > "patch/${file}"
           done
- 
+
           echo ""
           echo "Contents of $(pwd)/patch:"
           ls -halp patch/
@@ -182,47 +182,36 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-          - cmd: |
-              dpkg-buildpackage -uc -us -tc -b
+          - cmd: dpkg-buildpackage -uc -us -tc -b
             deps: gnat gprbuild
             package: hvinfo
-          - cmd: |
-              dpkg-buildpackage -uc -us -tc -b
+          - cmd: dpkg-buildpackage -uc -us -tc -b
             deps: check libcidr-dev
             package: ipaddrcheck
-          - cmd: |
-              dpkg-buildpackage -uc -us -tc -b
+          - cmd: dpkg-buildpackage -uc -us -tc -b
             deps: libaudit-dev
             package: libnss-mapuser
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: libaudit-dev libpam-tacplus-dev libtac-dev libtacplus-map-dev
             package: libnss-tacplus
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: libaudit-dev libcap-dev libpam-dev
             package: libpam-radius-auth
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: autoconf-archive libaudit-dev libpam-dev libssl-dev libtacplus-map-dev
             package: libpam-tacplus
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: autoconf-archive libaudit-dev
             package: libtacplus-map
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             package: live-boot
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: bison libncurses5-dev
             package: vyatta-bash
-          - cmd: |
-              dpkg-buildpackage -us -uc
+          - cmd: dpkg-buildpackage -us -uc
             deps: libpci-dev
             package: vyatta-biosdevname
-          - cmd: |
-              dpkg-buildpackage -uc -us -tc -b
+          - cmd: dpkg-buildpackage -uc -us -tc -b
             deps: bison flex libboost-filesystem-dev libglib2.0-dev
             package: vyatta-cfg
     timeout-minutes: 10
@@ -248,10 +237,10 @@ jobs:
             echo "TBM_VYOS_PATCH_TOKEN is required to read techbymatt/tbm-vyos-patch" >&2
             exit 1
           fi
- 
+
           sudo apt update
           sudo apt install --no-install-recommends --yes gh
-  
+
           mkdir patch/
           for file in \
             vyos-1x_changes.patch \
@@ -263,7 +252,7 @@ jobs:
               "/repos/techbymatt/tbm-vyos-patch/contents/${file}" \
               > "patch/${file}"
           done
- 
+
           echo ""
           echo "Contents of $(pwd)/patch:"
           ls -halp patch/
