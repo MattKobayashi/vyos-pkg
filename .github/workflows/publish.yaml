@@ -218,6 +218,9 @@ jobs:
           - cmd: dpkg-buildpackage -uc -us -tc -b
             deps: bison flex libboost-filesystem-dev libglib2.0-dev
             package: vyatta-cfg
+          - cmd: dpkg-buildpackage -uc -us -tc -b
+            deps: dh-virtualenv
+            package: vyos-http-api-tools
     timeout-minutes: 10
   build-nocontainer:
     name: Build (no container)
