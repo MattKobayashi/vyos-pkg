@@ -70,32 +70,18 @@ jobs:
           python3 build.py --packages linux-kernel
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Build the module packages (firmware)
-        run: |
-          python3 build.py --packages i40e
-          python3 build.py --packages iavf
-          python3 build.py --packages ice
-          python3 build.py --packages igb
-          python3 build.py --packages ixgbe
-          python3 build.py --packages ixgbevf
-          python3 build.py --packages linux-firmware
-          python3 build.py --packages mlnx
-          python3 build.py --packages qat
-          python3 build.py --packages realtek-r8126
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
-      - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Build the module packages (software)
-        run: |
-          python3 build.py --packages accel-ppp-ng
-          python3 build.py --packages ipt-netflow
-          python3 build.py --packages jool
-          python3 build.py --packages nat-rtsp
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
-      - name: Upload the .deb files as artifacts
+        name: Upload the kernel build artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: ${{ matrix.package }}
+          name: linux-kernel-${{ matrix.arch }}
+          path: vyos-build/scripts/package-build/linux-kernel
+      - if: ${{ matrix.package != 'linux-kernel' }}
+        name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: ${{ matrix.package }}-deb
           path: |
             vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
@@ -182,11 +168,12 @@ jobs:
           sudo apt-get update
           dpkg-buildpackage --build=binary --unsigned-changes --unsigned-source
         working-directory: packages/${{ matrix.package }}
-      - name: Upload the .deb files as artifacts
+      - if: ${{ matrix.package != 'linux-kernel' }}
+        name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: ${{ matrix.package }}
+          name: ${{ matrix.package }}-deb
           path: |
             packages/*.buildinfo
             packages/*.changes
@@ -241,6 +228,74 @@ jobs:
           - deps: dh-virtualenv
             package: vyos-http-api-tools
     timeout-minutes: 10
+  build-modules:
+    container:
+      env:
+        TZ: Australia/Brisbane
+      image: ghcr.io/techbymatt/vyos-build:rolling
+      options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
+    defaults:
+      run:
+        shell: bash
+    name: Build (modules)
+    needs: [build]
+    permissions:
+      packages: read
+    runs-on: ${{ matrix.runner_label }}
+    steps:
+      - name: Checkout the vyos-build repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          path: vyos-build
+          ref: rolling
+          repository: vyos/vyos-build
+      - name: Download the kernel build artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: linux-kernel-${{ matrix.arch }}
+          path: vyos-build/scripts/package-build/linux-kernel
+      - name: Build the module package
+        run: |
+          python3 build.py --packages ${{ matrix.module }}
+        working-directory: vyos-build/scripts/package-build/linux-kernel
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: ${{ matrix.module }}-deb
+          path: |
+            vyos-build/scripts/package-build/**/*.buildinfo
+            vyos-build/scripts/package-build/**/*.changes
+            vyos-build/scripts/package-build/**/*.deb
+            vyos-build/scripts/package-build/**/*.dsc
+            vyos-build/scripts/package-build/**/*.tar.bz2
+            vyos-build/scripts/package-build/**/*.tar.gz
+            vyos-build/scripts/package-build/**/*.tar.xz
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        module:
+          - accel-ppp-ng
+          - i40e
+          - iavf
+          - ice
+          - igb
+          - ipt-netflow
+          - ixgbe
+          - ixgbevf
+          - jool
+          - linux-firmware
+          - mlnx
+          - nat-rtsp
+          - qat
+          - realtek-r8126
+        include:
+          - arch: amd64
+            runner_label: ubuntu-24.04
+          - arch: arm64
+            runner_label: ubuntu-24.04-arm
+    timeout-minutes: 120
   build-nocontainer:
     name: Build (no container)
     runs-on: ${{ matrix.runner_label }}
@@ -306,7 +361,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: ${{ matrix.package }}
+          name: ${{ matrix.package }}-deb
           path: |
             vyos-build/scripts/package-build/${{ matrix.package }}/*.buildinfo
             vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
@@ -336,6 +391,7 @@ jobs:
     needs:
       - build
       - build-extra
+      - build-modules
       - build-nocontainer
     permissions:
       id-token: write
@@ -348,6 +404,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           merge-multiple: true
+          name: "*-deb"
           path: packages/rolling
       - name: Install required packages
         run: |
