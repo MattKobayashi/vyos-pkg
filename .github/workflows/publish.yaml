@@ -67,7 +67,11 @@ jobs:
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
-          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+          path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.gz
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.xz
     strategy:
       fail-fast: false
       matrix:
@@ -152,7 +156,11 @@ jobs:
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
-          path: packages/**.deb
+          path: |
+            packages/*.deb
+            packages/*.dsc
+            packages/*.tar.gz
+            packages/*.tar.xz
     strategy:
       fail-fast: false
       matrix:
@@ -286,7 +294,11 @@ jobs:
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
-          path: vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+          path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.gz
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.xz
     strategy:
       fail-fast: false
       matrix:
