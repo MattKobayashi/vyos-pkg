@@ -57,52 +57,50 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26.4"
-      - if: ${{ !matrix.cmd }}
+      - if: ${{ matrix.package != 'linux-kernel' }}
         name: Build the package
         run: |
           sudo apt-get update
           python3 build.py
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
-      - if: ${{ matrix.cmd }}
-        name: Build the package (custom build command)
+      - if: ${{ matrix.package == 'linux-kernel' }}
+        name: Build the package
         run: |
           sudo apt-get update
-          ${{ matrix.cmd }}
-        working-directory: ${{ matrix.working-directory }}
-      - if: ${{ !matrix.cmd }}
-        name: Upload the .deb files as artifacts
+          python3 build.py --packages linux-kernel
+          python3 build.py --packages accel-ppp-ng
+          python3 build.py --packages i40e
+          python3 build.py --packages iavf
+          python3 build.py --packages ice
+          python3 build.py --packages igb
+          python3 build.py --packages ipt-netflow
+          python3 build.py --packages ixgbe
+          python3 build.py --packages ixgbevf
+          python3 build.py --packages jool
+          python3 build.py --packages linux-firmware
+          python3 build.py --packages mlnx
+          python3 build.py --packages nat-rtsp
+          python3 build.py --packages qat
+          python3 build.py --packages realtek-r8126
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
+      - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: ${{ matrix.package }}
           path: |
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.buildinfo
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.bz2
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.gz
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.xz
-      - if: ${{ matrix.cmd }}
-        name: Upload the .deb files as artifacts (custom build command)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          if-no-files-found: error
-          name: ${{ matrix.package }}
-          path: |
-            ${{ matrix.working-directory }}/*.buildinfo
-            ${{ matrix.working-directory }}/*.changes
-            ${{ matrix.working-directory }}/*.deb
-            ${{ matrix.working-directory }}/*.dsc
-            ${{ matrix.working-directory }}/*.tar.bz2
-            ${{ matrix.working-directory }}/*.tar.gz
-            ${{ matrix.working-directory }}/*.tar.xz
+            vyos-build/scripts/package-build/**/*.buildinfo
+            vyos-build/scripts/package-build/**/*.changes
+            vyos-build/scripts/package-build/**/*.deb
+            vyos-build/scripts/package-build/**/*.dsc
+            vyos-build/scripts/package-build/**/*.tar.bz2
+            vyos-build/scripts/package-build/**/*.tar.gz
+            vyos-build/scripts/package-build/**/*.tar.xz
     strategy:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
         package:
-          - accel-ppp-ng
           - amazon-cloudwatch-agent
           - amazon-ssm-agent
           - aws-gwlbtun
@@ -115,22 +113,11 @@ jobs:
           - frr_exporter
           - hostap
           - hsflowd
-          - i40e
-          - iavf
-          - ice
-          - igb
-          - ipt-netflow
           - isc-dhcp
           - isc-kea
-          - ixgbe
-          - ixgbevf
-          - jool
           - keepalived
           - libnss-mapuser
           - libpam-radius-auth
-          - linux-firmware
-          - mlnx
-          - nat-rtsp
           - ndppd
           - net-snmp
           - netfilter
@@ -138,9 +125,7 @@ jobs:
           - openvpn-otp
           - podman
           - pyhumps
-          - qat
           - radvd
-          - realtek-r8126
           - salt
           - tacacs
           - telegraf
@@ -157,48 +142,6 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-          - cmd: python3 build.py --packages accel-ppp-ng linux-kernel
-            package: accel-ppp-ng
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages i40e linux-kernel
-            package: i40e
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages iavf linux-kernel
-            package: iavf
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ice linux-kernel
-            package: ice
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages igb linux-kernel
-            package: igb
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ipt-netflow linux-kernel
-            package: ipt-netflow
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ixgbe linux-kernel
-            package: ixgbe
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages ixgbevf linux-kernel
-            package: ixgbevf
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages jool linux-kernel
-            package: jool
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel linux-firmware
-            package: linux-firmware
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel mlnx
-            package: mlnx
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel nat-rtsp
-            package: nat-rtsp
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel qat
-            package: qat
-            working-directory: vyos-build/scripts/package-build/linux-kernel
-          - cmd: python3 build.py --packages linux-kernel realtek-r8126
-            package: realtek-r8126
-            working-directory: vyos-build/scripts/package-build/linux-kernel
     timeout-minutes: 180
   build-extra:
     container:
