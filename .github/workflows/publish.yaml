@@ -184,6 +184,9 @@ jobs:
           - cmd: python3 build.py --packages jool linux-kernel
             package: jool
             working-directory: vyos-build/scripts/package-build/linux-kernel
+          - cmd: python3 build.py --packages linux-firmware linux-kernel
+            package: linux-firmware
+            working-directory: vyos-build/scripts/package-build/linux-kernel
           - cmd: python3 build.py --packages linux-kernel mlnx
             package: mlnx
             working-directory: vyos-build/scripts/package-build/linux-kernel
