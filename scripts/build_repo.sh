@@ -9,22 +9,31 @@ readonly SITE_DIR="_site"
 readonly SUPPORTED_BRANCHES=("rolling")
 readonly DEB_COMPONENTS="main"
 readonly SOURCE_DIR="packages"
-readonly GPG_TTY=$(tty)
-readonly ARCHITECTURES=("all" "amd64" "arm64")
-readonly GPG_KEY_ID="${GPG_KEY_ID:-}" # Optional environment variable for specific key
+ARCHITECTURES=("all" "amd64" "arm64")
+# GPG key resolution: prefer GPG_FINGERPRINT (set by CI), fall back to GPG_KEY_ID
+readonly GPG_KEY_ID="${GPG_FINGERPRINT:-${GPG_KEY_ID:-}}"
+# GPG_TTY: only capture when running in an interactive terminal
+if [[ -t 0 ]]; then
+	export GPG_TTY
+else
+	unset GPG_TTY 2>/dev/null || true
+fi
 
 # Logging configuration
 readonly DEBUG=false
 
 # Check required environment variables and tools
 check_env_vars() {
-	local required_vars=("REPO_OWNER")
-	for var in "${required_vars[@]}"; do
-		if [[ -z "${!var:-}" ]]; then
-			echo "Error: Required environment variable $var is not set"
+	# REPO_OWNER is required unless ORIGIN is set (e.g. from CI GPG step)
+	if [[ -z "${REPO_OWNER:-}" ]]; then
+		if [[ -n "${ORIGIN:-}" ]]; then
+			REPO_OWNER="${ORIGIN}"
+			info "Using ORIGIN (${ORIGIN}) as REPO_OWNER"
+		else
+			echo "Error: Required environment variable REPO_OWNER is not set" >&2
 			exit 1
 		fi
-	done
+	fi
 
 	# Verify GPG is properly configured
 	if ! gpg --list-secret-keys >/dev/null 2>&1; then
@@ -35,6 +44,7 @@ check_env_vars() {
 		if ! gpg --list-secret-keys "${GPG_KEY_ID}" >/dev/null 2>&1; then
 			error "Specified GPG key ${GPG_KEY_ID} not found"
 		fi
+		info "Using GPG key: ${GPG_KEY_ID}"
 	fi
 }
 
@@ -81,7 +91,39 @@ move_debs() {
 	if ((moved == 0)); then
 		warning "No .deb packages found in ${source_path}"
 	else
-		info "Successfully moved ${moved} packages"
+		info "Successfully moved ${moved} .deb packages"
+	fi
+}
+
+move_sources() {
+	local branch="$1"
+	local target_dir="$2"
+	local source_path="${SOURCE_DIR}/${branch}"
+	local moved=0
+
+	if [[ ! -d "${source_path}" ]]; then
+		warning "Source directory ${source_path} not found, skipping source move"
+		return 0
+	fi
+
+	info "Moving source packages from ${source_path}..."
+	mkdir -p "${target_dir}"
+	# Source package file extensions: .dsc, .tar.gz, .tar.xz, .tar.bz2, .orig.tar.*, .debian.tar.*, .changes
+	local source_exts=("*.dsc" "*.tar.gz" "*.tar.xz" "*.tar.bz2" "*.changes")
+	for pattern in "${source_exts[@]}"; do
+		while IFS= read -r -d '' file; do
+			if mv "$file" "${target_dir}/"; then
+				((moved++))
+			else
+				error "Failed to move source file $file"
+			fi
+		done < <(find "${source_path}" -name "${pattern}" -type f -print0)
+	done
+
+	if ((moved == 0)); then
+		warning "No source packages found in ${source_path}"
+	else
+		info "Successfully moved ${moved} source package files"
 	fi
 }
 
@@ -98,6 +140,7 @@ build_repo() {
 	# Create repository structure and move packages
 	mkdir -p "${deb_pool}"
 	move_debs "${branch}" "${deb_pool}"
+	move_sources "${branch}" "${deb_pool}"
 
 	# Create component directories for each architecture
 	for arch in "${ARCHITECTURES[@]}"; do
@@ -110,17 +153,17 @@ build_repo() {
 
 		# Use -a option to filter by architecture
 		if ! dpkg-scanpackages -a "${arch}" "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>/dev/null; then
-			# For architecture "all", also try without the -a flag if it fails
-			if [[ "${arch}" == "all" ]] && ! dpkg-scanpackages "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages" 2>/dev/null; then
-				warning "Package scanning for ${arch} failed even without architecture filtering"
-			else
-				warning "Package scanning for ${arch} may have had issues"
-			fi
+			warning "Package scanning for ${arch} failed"
+			# Create an empty Packages file so compression doesn't fail
+			touch "dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
 		fi
 
 		# Compress package information
-		gzip -9 >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.gz" <"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
+		gzip -9n >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.gz" <"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
 		bzip2 -9 >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.bz2" <"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
+		if command -v xz >/dev/null 2>&1; then
+			xz -9 >"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages.xz" <"dists/${branch}/${DEB_COMPONENTS}/binary-${arch}/Packages"
+		fi
 
 		popd >/dev/null || exit 1
 	done
@@ -132,8 +175,11 @@ build_repo() {
 	pushd "${deb_base}" >/dev/null || exit 1
 	info "Scanning source packages..."
 	dpkg-scansources "pool/${DEB_COMPONENTS}" >"dists/${branch}/${DEB_COMPONENTS}/source/Sources" 2>/dev/null || true
-	gzip -9 >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.gz" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
+	gzip -9n >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.gz" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
 	bzip2 -9 >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.bz2" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
+	if command -v xz >/dev/null 2>&1; then
+		xz -9 >"dists/${branch}/${DEB_COMPONENTS}/source/Sources.xz" <"dists/${branch}/${DEB_COMPONENTS}/source/Sources"
+	fi
 	popd >/dev/null || exit 1
 
 	# Generate and sign Release file in the correct location (dists/${branch}/)
@@ -181,22 +227,22 @@ build_repo() {
 	fi
 
 	info "Signing Release file..."
-	export GPG_TTY
 
-	# Use specified key if available
-	local gpg_sign_cmd=(gpg --batch --detach-sign --armor)
-	local gpg_clearsign_cmd=(gpg --batch --clearsign)
+	# Build GPG signing commands
+	local gpg_common_opts=(--batch --yes --pinentry-mode loopback)
+	local gpg_sign_cmd=(gpg "${gpg_common_opts[@]}" --detach-sign --armor)
+	local gpg_clearsign_cmd=(gpg "${gpg_common_opts[@]}" --clearsign)
 
 	if [[ -n "${GPG_KEY_ID}" ]]; then
 		gpg_sign_cmd+=(--local-user "${GPG_KEY_ID}")
 		gpg_clearsign_cmd+=(--local-user "${GPG_KEY_ID}")
 	fi
 
-	if ! "${gpg_sign_cmd[@]}" >Release.gpg <Release; then
+	if ! "${gpg_sign_cmd[@]}" --output Release.gpg <Release; then
 		error "GPG signing failed for Release.gpg"
 	fi
 
-	if ! "${gpg_clearsign_cmd[@]}" >InRelease <Release; then
+	if ! "${gpg_clearsign_cmd[@]}" --output InRelease <Release; then
 		error "GPG signing failed for InRelease"
 	fi
 
@@ -211,10 +257,6 @@ cleanup() {
 		info "Cleaning up packages directory"
 		rm -rf "${SITE_DIR}/packages"
 	fi
-	if [[ -n "${temp_dir:-}" ]]; then
-		info "Cleaning up temporary directory"
-		rm -rf "${temp_dir}"
-	fi
 }
 
 main() {
@@ -227,7 +269,12 @@ main() {
 
 	# Verify required tools
 	info "Checking required tools"
-	for cmd in dpkg-scanpackages dpkg-scansources gpg gzip bzip2 find sort awk md5sum sha1sum sha256sum; do
+	local required_cmds=(dpkg-scanpackages dpkg-scansources gpg gzip bzip2 find sort awk md5sum sha1sum sha256sum)
+	# Check for xz separately — it's recommended but not required
+	if ! command -v xz >/dev/null 2>&1; then
+		warning "xz not found — .xz compressed indices will not be generated"
+	fi
+	for cmd in "${required_cmds[@]}"; do
 		if ! command -v "$cmd" >/dev/null 2>&1; then
 			error "Required command '$cmd' not found"
 		fi
