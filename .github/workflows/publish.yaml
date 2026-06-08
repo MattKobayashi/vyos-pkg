@@ -151,7 +151,7 @@ jobs:
       - name: Build the package
         run: |
           sudo apt-get update
-          ${{ matrix.cmd }}
+          dpkg-buildpackage --build=binary --unsigned-changes --unsigned-source
         working-directory: packages/${{ matrix.package }}
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -188,40 +188,28 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-          - cmd: dpkg-buildpackage -uc -us -tc -b
-            deps: gnat gprbuild
+          - deps: gnat gprbuild
             package: hvinfo
-          - cmd: dpkg-buildpackage -uc -us -tc -b
-            deps: check libcidr-dev
+          - deps: check libcidr-dev
             package: ipaddrcheck
-          - cmd: dpkg-buildpackage -uc -us -tc -b
-            deps: libaudit-dev
+          - deps: libaudit-dev
             package: libnss-mapuser
-          - cmd: dpkg-buildpackage -us -uc
-            deps: libaudit-dev libpam-tacplus-dev libtac-dev libtacplus-map-dev
+          - deps: libaudit-dev libpam-tacplus-dev libtac-dev libtacplus-map-dev
             package: libnss-tacplus
-          - cmd: dpkg-buildpackage -us -uc
-            deps: libaudit-dev libcap-dev libpam-dev
+          - deps: libaudit-dev libcap-dev libpam-dev
             package: libpam-radius-auth
-          - cmd: dpkg-buildpackage -us -uc
-            deps: autoconf-archive libaudit-dev libpam-dev libssl-dev libtacplus-map-dev
+          - deps: autoconf-archive libaudit-dev libpam-dev libssl-dev libtacplus-map-dev
             package: libpam-tacplus
-          - cmd: dpkg-buildpackage -us -uc
-            deps: autoconf-archive libaudit-dev
+          - deps: autoconf-archive libaudit-dev
             package: libtacplus-map
-          - cmd: dpkg-buildpackage -us -uc
-            package: live-boot
-          - cmd: dpkg-buildpackage -us -uc
-            deps: bison libncurses5-dev
+          - package: live-boot
+          - deps: bison libncurses5-dev
             package: vyatta-bash
-          - cmd: dpkg-buildpackage -us -uc
-            deps: libpci-dev
+          - deps: libpci-dev
             package: vyatta-biosdevname
-          - cmd: dpkg-buildpackage -uc -us -tc -b
-            deps: bison flex libboost-filesystem-dev libglib2.0-dev
+          - deps: bison flex libboost-filesystem-dev libglib2.0-dev
             package: vyatta-cfg
-          - cmd: dpkg-buildpackage -uc -us -tc -b
-            deps: dh-virtualenv
+          - deps: dh-virtualenv
             package: vyos-http-api-tools
     timeout-minutes: 10
   build-nocontainer:
