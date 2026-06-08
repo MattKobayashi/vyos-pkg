@@ -57,10 +57,17 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26.4"
-      - name: Build the package
+      - if: ${{ !matrix.cmd }}
+        name: Build the package
         run: |
           sudo apt-get update
           python3 build.py
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
+      - if: ${{ matrix.cmd }}
+        name: Build the package (custom build command)
+        run: |
+          sudo apt-get update
+          ${{ matrix.cmd }}
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -80,6 +87,7 @@ jobs:
       matrix:
         arch: [amd64, arm64]
         package:
+          - accel-ppp-ng
           - amazon-cloudwatch-agent
           - amazon-ssm-agent
           - aws-gwlbtun
@@ -92,12 +100,23 @@ jobs:
           - frr_exporter
           - hostap
           - hsflowd
+          - i40e
+          - iavf
+          - ice
+          - igb
+          - ipt-netflow
           - isc-dhcp
           - isc-kea
+          - ixgbe
+          - ixgbevf
+          - jool
           - keepalived
           - libnss-mapuser
           - libpam-radius-auth
+          - linux-firmware
           - linux-kernel
+          - mlnx
+          - nat-rtsp
           - ndppd
           - net-snmp
           - netfilter
@@ -105,7 +124,9 @@ jobs:
           - openvpn-otp
           - podman
           - pyhumps
+          - qat
           - radvd
+          - realtek-r8126
           - salt
           - tacacs
           - telegraf
@@ -122,6 +143,36 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
+          - cmd: python3 build.py --packages accel-ppp-ng
+            package: accel-ppp-ng
+          - cmd: python3 build.py --packages i40e
+            package: i40e
+          - cmd: python3 build.py --packages iavf
+            package: iavf
+          - cmd: python3 build.py --packages ice
+            package: ice
+          - cmd: python3 build.py --packages igb
+            package: igb
+          - cmd: python3 build.py --packages ipt-netflow
+            package: ipt-netflow
+          - cmd: python3 build.py --packages ixgbe
+            package: ixgbe
+          - cmd: python3 build.py --packages ixgbevf
+            package: ixgbevf
+          - cmd: python3 build.py --packages jool
+            package: jool
+          - cmd: python3 build.py --packages linux-firmware
+            package: linux-firmware
+          - cmd: python3 build.py --packages linux-kernel
+            package: linux-kernel
+          - cmd: python3 build.py --packages mlnx
+            package: mlnx
+          - cmd: python3 build.py --packages nat-rtsp
+            package: nat-rtsp
+          - cmd: python3 build.py --packages qat
+            package: qat
+          - cmd: python3 build.py --packages realtek-r8126
+            package: realtek-r8126
     timeout-minutes: 180
   build-extra:
     container:
