@@ -188,7 +188,7 @@ jobs:
         working-directory: packages/${{ matrix.package }}
       - name: List the .deb files built
         run: |
-          ls -halp vyos-build/scripts/package-build/**/*.deb
+          ls -halp packages/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
