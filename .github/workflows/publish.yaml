@@ -29,7 +29,15 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
-          path: vyos-build/scripts/package-build/${{ matrix.package }}
+          path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}
+            "!vyos-build/scripts/package-build/**/*.deb"
+            "!vyos-build/scripts/package-build/**/*.buildinfo"
+            "!vyos-build/scripts/package-build/**/*.changes"
+            "!vyos-build/scripts/package-build/**/*.dsc"
+            "!vyos-build/scripts/package-build/**/*.tar.bz2"
+            "!vyos-build/scripts/package-build/**/*.tar.gz"
+            "!vyos-build/scripts/package-build/**/*.tar.xz"
           restore-keys: |
             cache-${{ matrix.package }}-${{ matrix.arch }}
       - if: ${{ matrix.package == 'linux-kernel' }}
@@ -40,11 +48,17 @@ jobs:
           path: |
             vyos-build/scripts/package-build/${{ matrix.package }}
             vyos-build/scripts/package-build/vpp
+            "!vyos-build/scripts/package-build/**/*.deb"
+            "!vyos-build/scripts/package-build/**/*.buildinfo"
+            "!vyos-build/scripts/package-build/**/*.changes"
+            "!vyos-build/scripts/package-build/**/*.dsc"
+            "!vyos-build/scripts/package-build/**/*.tar.bz2"
+            "!vyos-build/scripts/package-build/**/*.tar.gz"
+            "!vyos-build/scripts/package-build/**/*.tar.xz"
           restore-keys: |
             cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
         run: |
-          sudo apt-get update
           python3 build.py
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - name: List the .deb files built
@@ -145,7 +159,15 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
-          path: packages/${{ matrix.package }}
+          path: |
+            packages/${{ matrix.package }}
+            "!packages/*.deb"
+            "!packages/*.buildinfo"
+            "!packages/*.changes"
+            "!packages/*.dsc"
+            "!packages/*.tar.bz2"
+            "!packages/*.tar.gz"
+            "!packages/*.tar.xz"
           restore-keys: |
             cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
@@ -248,13 +270,20 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
-          path: vyos-build/scripts/package-build/${{ matrix.package }}
+          path: |
+            vyos-build/scripts/package-build/${{ matrix.package }}
+            "!vyos-build/scripts/package-build/**/*.deb"
+            "!vyos-build/scripts/package-build/**/*.buildinfo"
+            "!vyos-build/scripts/package-build/**/*.changes"
+            "!vyos-build/scripts/package-build/**/*.dsc"
+            "!vyos-build/scripts/package-build/**/*.tar.bz2"
+            "!vyos-build/scripts/package-build/**/*.tar.gz"
+            "!vyos-build/scripts/package-build/**/*.tar.xz"
           restore-keys: |
             cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
-          sudo apt-get update
           python3 build.py
       - name: List the .deb files built
         run: |
