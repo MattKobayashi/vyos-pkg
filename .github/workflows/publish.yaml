@@ -60,10 +60,10 @@ jobs:
       - name: Cache build
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          key: cache-${{ matrix.package }}-${{ github.run_id }}
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
           path: vyos-build/scripts/package-build/${{ matrix.package }}
           restore-keys: |
-            cache-${{ matrix.package }}
+            cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
         run: |
           sudo apt-get update
@@ -181,10 +181,10 @@ jobs:
       - name: Cache build
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          key: cache-${{ matrix.package }}-${{ github.run_id }}
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
           path: packages/${{ matrix.package }}
           restore-keys: |
-            cache-${{ matrix.package }}
+            cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
         run: |
           sudo apt-get update
@@ -287,10 +287,10 @@ jobs:
   #       name: Cache build
   #       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
   #       with:
-  #         key: cache-${{ matrix.module }}-${{ github.run_id }}
+  #         key: cache-${{ matrix.module }}-${{ matrix.arch }}-${{ github.run_id }}
   #         path: vyos-build/scripts/package-build/linux-kernel
   #         restore-keys: |
-  #           cache-${{ matrix.module }}
+  #           cache-${{ matrix.module }}-${{ matrix.arch }}
   #     - if: ${{ matrix.arch == 'amd64' || (matrix.arch == 'arm64' && !matrix.skip_arm64) }}
   #       name: Build the module package
   #       run: |
@@ -414,10 +414,10 @@ jobs:
       - name: Cache build
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
-          key: cache-${{ matrix.package }}-${{ github.run_id }}
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
           path: vyos-build/scripts/package-build/${{ matrix.package }}
           restore-keys: |
-            cache-${{ matrix.package }}
+            cache-${{ matrix.package }}-${{ matrix.arch }}
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
