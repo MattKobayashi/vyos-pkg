@@ -31,6 +31,14 @@ jobs:
           path: vyos-build/scripts/package-build/${{ matrix.package }}
           restore-keys: |
             cache-${{ matrix.package }}-${{ matrix.arch }}
+      - if: ${{ matrix.package == 'linux-kernel' }}
+        name: Cache VPP
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          key: cache-vpp-${{ matrix.arch }}-${{ github.run_id }}
+          path: vyos-build/scripts/package-build/vpp
+          restore-keys: |
+            cache-vpp-${{ matrix.arch }}
       - name: Build the package
         run: |
           sudo apt-get update
