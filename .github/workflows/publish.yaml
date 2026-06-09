@@ -70,23 +70,20 @@ jobs:
           python3 build.py --packages linux-kernel
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Upload the kernel config artifact
+        name: Upload the kernel source artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
-          name: kernel-config-${{ matrix.arch }}
+          name: kernel-source-${{ matrix.arch }}
           path: |
             vyos-build/scripts/package-build/linux-kernel/kernel-vars
-            vyos-build/scripts/package-build/linux-kernel/*/linux/include/generated/autoconf.h
-            vyos-build/scripts/package-build/linux-kernel/*/linux/include/generated/rustc_cfg
-            vyos-build/scripts/package-build/linux-kernel/*/linux/include/config/auto.conf
+            vyos-build/scripts/package-build/linux-kernel/*/linux
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.deb
             vyos-build/scripts/package-build/**/*.dsc
@@ -178,7 +175,6 @@ jobs:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            packages/*.buildinfo
             packages/*.changes
             packages/*.deb
             packages/*.dsc
@@ -252,22 +248,23 @@ jobs:
           path: vyos-build
           ref: rolling
           repository: vyos/vyos-build
-      - name: Download the kernel config artifact
+      - name: Download the kernel source artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: kernel-config-${{ matrix.arch }}
+          name: kernel-source-${{ matrix.arch }}
           path: vyos-build/scripts/package-build/linux-kernel
-      - name: Build the module package
+      - if: ${{ matrix.arch == 'arm64' && !matrix.skip_arm64 }}
+        name: Build the module package
         run: |
           python3 build.py --packages ${{ matrix.module }}
         working-directory: vyos-build/scripts/package-build/linux-kernel
-      - name: Upload the .deb files as artifacts
+      - if: ${{ matrix.arch == 'arm64' && !matrix.skip_arm64 }}
+        name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.module }}
           path: |
-            vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.deb
             vyos-build/scripts/package-build/**/*.dsc
@@ -298,6 +295,16 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
+          - module:
+              - i40e
+              - iavf
+              - ice
+              - igb
+              - ixgbe
+              - ixgbevf
+              - mlnx
+              - qat
+            skip_arm64: true
     timeout-minutes: 120
   build-nocontainer:
     name: Build (no container)
@@ -366,7 +373,6 @@ jobs:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.buildinfo
             vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
             vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
             vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
