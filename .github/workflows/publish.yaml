@@ -77,14 +77,23 @@ jobs:
       #     path: |
       #       vyos-build/scripts/package-build/linux-kernel/kernel-vars
       #       vyos-build/scripts/package-build/linux-kernel/*/linux
+      - name: List the .deb files built
+        run: |
+          ls -halp vyos-build/scripts/package-build/**/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.deb
+      - name: Upload the remaining build files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-${{ matrix.package }}
+          path: |
+            vyos-build/scripts/package-build/**/*.buildinfo
+            vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.dsc
             vyos-build/scripts/package-build/**/*.tar.bz2
             vyos-build/scripts/package-build/**/*.tar.gz
@@ -167,14 +176,23 @@ jobs:
           sudo apt-get update
           dpkg-buildpackage --build=binary --unsigned-changes --unsigned-source
         working-directory: packages/${{ matrix.package }}
+      - name: List the .deb files built
+        run: |
+          ls -halp vyos-build/scripts/package-build/**/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            packages/*.changes
             packages/*.deb
+      - name: Upload the remaining build files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-${{ matrix.package }}
+          path: |
+            packages/*.buildinfo
+            packages/*.changes
             packages/*.dsc
             packages/*.tar.bz2
             packages/*.tar.gz
@@ -257,14 +275,25 @@ jobs:
   #         python3 build.py --packages ${{ matrix.module }}
   #       working-directory: vyos-build/scripts/package-build/linux-kernel
   #     - if: ${{ matrix.arch == 'amd64' || (matrix.arch == 'arm64' && !matrix.skip_arm64) }}
+  #       name: List the .deb files built
+  #       run: |
+  #         ls -halp vyos-build/scripts/package-build/**/*.deb
+  #     - if: ${{ matrix.arch == 'amd64' || (matrix.arch == 'arm64' && !matrix.skip_arm64) }}
   #       name: Upload the .deb files as artifacts
   #       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
   #       with:
   #         if-no-files-found: error
   #         name: deb-${{ matrix.module }}
   #         path: |
-  #           vyos-build/scripts/package-build/**/*.changes
   #           vyos-build/scripts/package-build/**/*.deb
+  #     - if: ${{ matrix.arch == 'amd64' || (matrix.arch == 'arm64' && !matrix.skip_arm64) }}
+  #       name: Upload the remaining build files as artifacts
+  #       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+  #       with:
+  #         name: build-${{ matrix.module }}
+  #         path: |
+  #           vyos-build/scripts/package-build/**/*.buildinfo
+  #           vyos-build/scripts/package-build/**/*.changes
   #           vyos-build/scripts/package-build/**/*.dsc
   #           vyos-build/scripts/package-build/**/*.tar.bz2
   #           vyos-build/scripts/package-build/**/*.tar.gz
@@ -365,18 +394,27 @@ jobs:
         run: |
           sudo apt-get update
           python3 build.py
+      - name: List the .deb files built
+        run: |
+          ls -halp vyos-build/scripts/package-build/**/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.package }}
           path: |
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.changes
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.dsc
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.bz2
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.gz
-            vyos-build/scripts/package-build/${{ matrix.package }}/*.tar.xz
+            vyos-build/scripts/package-build/**/*.deb
+      - name: Upload the remaining build files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-${{ matrix.package }}
+          path: |
+            vyos-build/scripts/package-build/**/*.buildinfo
+            vyos-build/scripts/package-build/**/*.changes
+            vyos-build/scripts/package-build/**/*.dsc
+            vyos-build/scripts/package-build/**/*.tar.bz2
+            vyos-build/scripts/package-build/**/*.tar.gz
+            vyos-build/scripts/package-build/**/*.tar.xz
     strategy:
       fail-fast: false
       matrix:
@@ -412,6 +450,12 @@ jobs:
         with:
           merge-multiple: true
           name: deb-*
+          path: packages/rolling
+      - name: Download the build file artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          merge-multiple: true
+          name: build-*
           path: packages/rolling
       - name: Install required packages
         run: |
