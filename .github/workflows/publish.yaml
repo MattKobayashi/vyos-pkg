@@ -85,6 +85,7 @@ jobs:
           - isc-dhcp
           - isc-kea
           - keepalived
+          - libhtp
           - libnss-mapuser
           - libpam-radius-auth
           - linux-kernel
