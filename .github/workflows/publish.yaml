@@ -36,9 +36,8 @@ jobs:
             "!vyos-build/scripts/package-build/**/*.buildinfo"
             "!vyos-build/scripts/package-build/**/*.changes"
             "!vyos-build/scripts/package-build/**/*.dsc"
-            "!vyos-build/scripts/package-build/**/*.tar.bz2"
-            "!vyos-build/scripts/package-build/**/*.tar.gz"
-            "!vyos-build/scripts/package-build/**/*.tar.xz" 
+            "!vyos-build/scripts/package-build/**/*debian.tar.*"
+            "!vyos-build/scripts/package-build/**/*orig.tar.*"
       - name: Build the package
         run: |
           python3 build.py
@@ -61,9 +60,8 @@ jobs:
             vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.dsc
-            vyos-build/scripts/package-build/**/*.tar.bz2
-            vyos-build/scripts/package-build/**/*.tar.gz
-            vyos-build/scripts/package-build/**/*.tar.xz
+            vyos-build/scripts/package-build/**/*debian.tar.*
+            vyos-build/scripts/package-build/**/*orig.tar.*
     strategy:
       fail-fast: false
       matrix:
@@ -148,9 +146,8 @@ jobs:
             "!packages/*.buildinfo"
             "!packages/*.changes"
             "!packages/*.dsc"
-            "!packages/*.tar.bz2"
-            "!packages/*.tar.gz"
-            "!packages/*.tar.xz"
+            "!packages/*debian.tar.*"
+            "!packages/*orig.tar.*"
       - name: Build the package
         run: |
           sudo apt-get update
@@ -174,9 +171,8 @@ jobs:
             packages/*.buildinfo
             packages/*.changes
             packages/*.dsc
-            packages/*.tar.bz2
-            packages/*.tar.gz
-            packages/*.tar.xz
+            packages/*debian.tar.*
+            packages/*orig.tar.*
     strategy:
       fail-fast: false
       matrix:
@@ -251,9 +247,8 @@ jobs:
             "!vyos-build/scripts/package-build/**/*.buildinfo"
             "!vyos-build/scripts/package-build/**/*.changes"
             "!vyos-build/scripts/package-build/**/*.dsc"
-            "!vyos-build/scripts/package-build/**/*.tar.bz2"
-            "!vyos-build/scripts/package-build/**/*.tar.gz"
-            "!vyos-build/scripts/package-build/**/*.tar.xz"
+            "!vyos-build/scripts/package-build/**/*debian.tar.*"
+            "!vyos-build/scripts/package-build/**/*orig.tar.*"
       - name: Build the package
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
         run: |
@@ -276,9 +271,8 @@ jobs:
             vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.dsc
-            vyos-build/scripts/package-build/**/*.tar.bz2
-            vyos-build/scripts/package-build/**/*.tar.gz
-            vyos-build/scripts/package-build/**/*.tar.xz
+            vyos-build/scripts/package-build/**/*debian.tar.*
+            vyos-build/scripts/package-build/**/*orig.tar.*
     strategy:
       fail-fast: false
       matrix:
