@@ -201,17 +201,12 @@ jobs:
             package: hvinfo
           - deps: check libcidr-dev
             package: ipaddrcheck
-          - deps: libaudit-dev
-            package: libnss-mapuser
           - deps: libaudit-dev libpam-tacplus-dev libtac-dev libtacplus-map-dev
             package: libnss-tacplus
-          - deps: libaudit-dev libcap-dev libpam-dev
-            package: libpam-radius-auth
           - deps: autoconf-archive libaudit-dev libpam-dev libssl-dev libtacplus-map-dev
             package: libpam-tacplus
           - deps: autoconf-archive libaudit-dev
             package: libtacplus-map
-          - package: live-boot
           - deps: bison libncurses5-dev
             package: vyatta-bash
           - deps: libpci-dev
