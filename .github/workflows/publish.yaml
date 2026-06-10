@@ -30,7 +30,19 @@ jobs:
           except ImportError:
               import tomli as tomllib
           with open('vyos-build/scripts/package-build/${{ matrix.package }}/package.toml', 'rb') as f:
-              print(tomllib.load(f)['packages']['commit_id'])
+              data = tomllib.load(f)
+          name = '${{ matrix.package }}'
+          pkg = next((p for p in data.get('packages', []) if p.get('name') == name), None)
+          if pkg is None:
+              sys.exit('Error: no entry for ' + repr(name) + ' in package.toml')
+          commit_id = pkg.get('commit_id', '')
+          if not commit_id:
+              with open('vyos-build/data/defaults.toml', 'rb') as f:
+                  defaults = tomllib.load(f)
+              commit_id = defaults.get('kernel_version', '')
+              if not commit_id:
+                  sys.exit('Error: kernel_version not found in defaults.toml')
+          print(commit_id)
           ")
           echo "commit_id=${COMMIT_ID}" >> "$GITHUB_OUTPUT"
       - name: Setup golang
@@ -287,7 +299,19 @@ jobs:
           except ImportError:
               import tomli as tomllib
           with open('vyos-build/scripts/package-build/${{ matrix.package }}/package.toml', 'rb') as f:
-              print(tomllib.load(f)['packages']['commit_id'])
+              data = tomllib.load(f)
+          name = '${{ matrix.package }}'
+          pkg = next((p for p in data.get('packages', []) if p.get('name') == name), None)
+          if pkg is None:
+              sys.exit('Error: no entry for ' + repr(name) + ' in package.toml')
+          commit_id = pkg.get('commit_id', '')
+          if not commit_id:
+              with open('vyos-build/data/defaults.toml', 'rb') as f:
+                  defaults = tomllib.load(f)
+              commit_id = defaults.get('kernel_version', '')
+              if not commit_id:
+                  sys.exit('Error: kernel_version not found in defaults.toml')
+          print(commit_id)
           ")
           echo "commit_id=${COMMIT_ID}" >> "$GITHUB_OUTPUT"
       - name: Setup golang
