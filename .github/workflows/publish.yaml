@@ -203,9 +203,7 @@ jobs:
         package:
           - hvinfo
           - ipaddrcheck
-          - libnss-mapuser
           - libnss-tacplus
-          - libpam-radius-auth
           - libpam-tacplus
           - libtacplus-map
           - live-boot
