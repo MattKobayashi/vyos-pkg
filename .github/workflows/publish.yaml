@@ -129,7 +129,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-    timeout-minutes: 120
+    timeout-minutes: 150
   build-extra:
     container:
       env:
@@ -241,7 +241,7 @@ jobs:
             package: vyatta-cfg
           - deps: dh-virtualenv
             package: vyos-http-api-tools
-    timeout-minutes: 10
+    timeout-minutes: 30
   build-nocontainer:
     name: Build (no container)
     runs-on: ${{ matrix.runner_label }}
