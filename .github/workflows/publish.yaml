@@ -94,7 +94,6 @@ jobs:
           - podman
           - pyhumps
           - radvd
-          - salt
           - tacacs
           - telegraf
           - udp-broadcast-relay
