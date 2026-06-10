@@ -25,25 +25,10 @@ jobs:
         uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
         with:
           go-version: "1.26.4"
-      - if: ${{ matrix.package != 'linux-kernel' }}
-        name: Cache build
+      - name: Cache build
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.checkout.outputs.commit }}
-          path: |
-            vyos-build/scripts/package-build/${{ matrix.package }}
-            "!vyos-build/scripts/package-build/**/*.deb"
-            "!vyos-build/scripts/package-build/**/*.buildinfo"
-            "!vyos-build/scripts/package-build/**/*.changes"
-            "!vyos-build/scripts/package-build/**/*.dsc"
-            "!vyos-build/scripts/package-build/**/*.tar.bz2"
-            "!vyos-build/scripts/package-build/**/*.tar.gz"
-            "!vyos-build/scripts/package-build/**/*.tar.xz"
-      - if: ${{ matrix.package == 'linux-kernel' }}
-        name: Cache build
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ github.run_id }}
           path: |
             vyos-build/scripts/package-build/${{ matrix.package }}
             vyos-build/scripts/package-build/vpp
@@ -53,9 +38,7 @@ jobs:
             "!vyos-build/scripts/package-build/**/*.dsc"
             "!vyos-build/scripts/package-build/**/*.tar.bz2"
             "!vyos-build/scripts/package-build/**/*.tar.gz"
-            "!vyos-build/scripts/package-build/**/*.tar.xz"
-          restore-keys: |
-            cache-${{ matrix.package }}-${{ matrix.arch }}
+            "!vyos-build/scripts/package-build/**/*.tar.xz" 
       - name: Build the package
         run: |
           python3 build.py
