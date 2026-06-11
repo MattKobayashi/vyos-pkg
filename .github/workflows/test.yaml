@@ -130,7 +130,10 @@ jobs:
     steps:
       - name: Print user
         run: |
-          whoami
+          echo "User name: $(id -un)"
+          echo "User ID: $(id -u)"
+          echo "Group name: $(id -gn)"
+          echo "Group ID: $(id -g)"
       - name: Install dependencies
         run: |
           python3 -m pip install toml
