@@ -3,24 +3,13 @@ jobs:
   setup-matrix:
     name: Setup matrix
     outputs:
-      package-container: ${{ steps.container.outputs.json }}
-      package-nocontainer: ${{ steps.nocontainer.outputs.json }}
+      package: ${{ steps.container.outputs.json }}
     runs-on: ubuntu-24.04
     steps:
       - id: container
         name: Parse container package list
         run: |
-          input='${{ inputs.package-container }}'
-          if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
-            json='[]'
-          else
-            json=$(printf '%s' "$input" | grep -oE '[^,[:space:]]+' | jq -R . | jq -sc .)
-          fi
-          echo "json=$json" >> "$GITHUB_OUTPUT"
-      - id: nocontainer
-        name: Parse nocontainer package list
-        run: |
-          input='${{ inputs.package-nocontainer }}'
+          input='${{ inputs.package }}'
           if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
             json='[]'
           else
@@ -115,7 +104,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
-        package: ${{ fromJson(needs.setup-matrix.outputs.package-container) }}
+        package: ${{ fromJson(needs.setup-matrix.outputs.package) }}
         include:
           - arch: amd64
             runner_label: ubuntu-24.04
@@ -197,12 +186,8 @@ name: Test
 on:
   workflow_dispatch:
     inputs:
-      package-container:
+      package:
         description: A comma-separated list of packages to be built using the vyos-build container
-        required: false
-        type: string
-      package-nocontainer:
-        description: A comma-separated list of packages to be built directly on the runner
         required: false
         type: string
 permissions:
