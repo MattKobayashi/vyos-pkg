@@ -128,6 +128,9 @@ jobs:
     needs: [setup-matrix]
     runs-on: ${{ matrix.runner_label }}
     steps:
+      - name: Print user
+        run: |
+          whoami
       - name: Install dependencies
         run: |
           python3 -m pip install toml
