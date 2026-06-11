@@ -69,6 +69,7 @@ jobs:
             "!vyos-build/scripts/package-build/**/*.buildinfo"
             "!vyos-build/scripts/package-build/**/*.changes"
             "!vyos-build/scripts/package-build/**/*.dsc"
+            "!vyos-build/scripts/package-build/**/*.lo"
             "!vyos-build/scripts/package-build/**/*debian.tar.*"
             "!vyos-build/scripts/package-build/**/*orig.tar.*"
       - name: Build the package
@@ -180,6 +181,7 @@ jobs:
             "!packages/*.buildinfo"
             "!packages/*.changes"
             "!packages/*.dsc"
+            "!packages/*.lo"
             "!packages/*debian.tar.*"
             "!packages/*orig.tar.*"
       - name: Build the package
