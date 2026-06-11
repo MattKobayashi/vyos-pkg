@@ -124,6 +124,7 @@ jobs:
           - netfilter
           - node_exporter
           - openvpn-otp
+          - owamp
           - podman
           - pyhumps
           - radvd
@@ -245,79 +246,6 @@ jobs:
           - deps: dh-virtualenv
             package: vyos-http-api-tools
     timeout-minutes: 30
-  build-nocontainer:
-    name: Build (no container)
-    runs-on: ${{ matrix.runner_label }}
-    steps:
-      - name: Install dependencies
-        run: |
-          python3 -m pip install toml
-          sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install \
-            devscripts \
-            dh-python \
-            equivs \
-            python3-toml \
-            python3-tomli
-      - id: checkout
-        name: Checkout the vyos-build repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          path: vyos-build
-          ref: rolling
-          repository: vyos/vyos-build
-      - name: Setup golang
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version: "1.26.4"
-      - name: Cache build
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.checkout.outputs.commit }}
-          path: |
-            vyos-build/scripts/package-build/${{ matrix.package }}
-            "!vyos-build/scripts/package-build/**/*.deb"
-            "!vyos-build/scripts/package-build/**/*.buildinfo"
-            "!vyos-build/scripts/package-build/**/*.changes"
-            "!vyos-build/scripts/package-build/**/*.dsc"
-            "!vyos-build/scripts/package-build/**/*debian.tar.*"
-            "!vyos-build/scripts/package-build/**/*orig.tar.*"
-      - name: Build the package
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
-        run: |
-          python3 build.py
-      - name: List the .deb files built
-        run: |
-          ls -halp vyos-build/scripts/package-build/**/*.deb
-      - name: Upload the .deb files as artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          if-no-files-found: error
-          name: deb-${{ matrix.package }}-${{ matrix.arch }}
-          path: |
-            vyos-build/scripts/package-build/**/*.deb
-      - name: Upload the remaining build files as artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: build-${{ matrix.package }}-${{ matrix.arch }}
-          path: |
-            vyos-build/scripts/package-build/**/*.buildinfo
-            vyos-build/scripts/package-build/**/*.changes
-            vyos-build/scripts/package-build/**/*.dsc
-            vyos-build/scripts/package-build/**/*debian.tar.*
-            vyos-build/scripts/package-build/**/*orig.tar.*
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64, arm64]
-        package:
-          - owamp
-        include:
-          - arch: amd64
-            runner_label: ubuntu-24.04
-          - arch: arm64
-            runner_label: ubuntu-24.04-arm
-    timeout-minutes: 30
   publish:
     environment:
       name: github-pages
@@ -326,7 +254,6 @@ jobs:
     needs:
       - build
       - build-extra
-      - build-nocontainer
     permissions:
       id-token: write
       pages: write

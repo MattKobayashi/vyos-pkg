@@ -3,24 +3,13 @@ jobs:
   setup-matrix:
     name: Setup matrix
     outputs:
-      package-container: ${{ steps.container.outputs.json }}
-      package-nocontainer: ${{ steps.nocontainer.outputs.json }}
+      package: ${{ steps.container.outputs.json }}
     runs-on: ubuntu-24.04
     steps:
       - id: container
         name: Parse container package list
         run: |
-          input='${{ inputs.package-container }}'
-          if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
-            json='[]'
-          else
-            json=$(printf '%s' "$input" | grep -oE '[^,[:space:]]+' | jq -R . | jq -sc .)
-          fi
-          echo "json=$json" >> "$GITHUB_OUTPUT"
-      - id: nocontainer
-        name: Parse nocontainer package list
-        run: |
-          input='${{ inputs.package-nocontainer }}'
+          input='${{ inputs.package }}'
           if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
             json='[]'
           else
@@ -115,81 +104,19 @@ jobs:
       fail-fast: false
       matrix:
         arch: [amd64, arm64]
-        package: ${{ fromJson(needs.setup-matrix.outputs.package-container) }}
+        package: ${{ fromJson(needs.setup-matrix.outputs.package) }}
         include:
           - arch: amd64
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
     timeout-minutes: 150
-  build-nocontainer:
-    name: Build (no container)
-    needs: [setup-matrix]
-    runs-on: ${{ matrix.runner_label }}
-    steps:
-      - name: Install dependencies
-        run: |
-          python3 -m pip install toml
-          sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install \
-            devscripts \
-            dh-python \
-            equivs \
-            python3-toml \
-            python3-tomli
-      - id: checkout
-        name: Checkout the vyos-build repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          path: vyos-build
-          ref: rolling
-          repository: vyos/vyos-build
-      - name: Setup golang
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version: "1.26.4"
-      - name: Build the package
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
-        run: |
-          python3 build.py
-      - name: List the .deb files built
-        run: |
-          ls -halp vyos-build/scripts/package-build/**/*.deb
-      - name: Upload the .deb files as artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          if-no-files-found: error
-          name: deb-${{ matrix.package }}-${{ matrix.arch }}
-          path: |
-            vyos-build/scripts/package-build/**/*.deb
-      - name: Upload the remaining build files as artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: build-${{ matrix.package }}-${{ matrix.arch }}
-          path: |
-            vyos-build/scripts/package-build/**/*.buildinfo
-            vyos-build/scripts/package-build/**/*.changes
-            vyos-build/scripts/package-build/**/*.dsc
-            vyos-build/scripts/package-build/**/*debian.tar.*
-            vyos-build/scripts/package-build/**/*orig.tar.*
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64, arm64]
-        package: ${{ fromJson(needs.setup-matrix.outputs.package-nocontainer) }}
-        include:
-          - arch: amd64
-            runner_label: ubuntu-24.04
-          - arch: arm64
-            runner_label: ubuntu-24.04-arm
-    timeout-minutes: 30
   publish:
     name: Publish
-    if: ${{ always() && needs.setup-matrix.result == 'success' && (needs.build.result == 'success' || needs.build-nocontainer.result == 'success') }}
+    if: ${{ always() && needs.setup-matrix.result == 'success' && needs.build.result == 'success' }}
     needs:
       - setup-matrix
       - build
-      - build-nocontainer
     permissions:
       id-token: write
       pages: write
@@ -259,12 +186,8 @@ name: Test
 on:
   workflow_dispatch:
     inputs:
-      package-container:
+      package:
         description: A comma-separated list of packages to be built using the vyos-build container
-        required: false
-        type: string
-      package-nocontainer:
-        description: A comma-separated list of packages to be built directly on the runner
         required: false
         type: string
 permissions:
