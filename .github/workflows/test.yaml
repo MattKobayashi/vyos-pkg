@@ -43,6 +43,11 @@ jobs:
       packages: read
     runs-on: ${{ matrix.runner_label }}
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes chrony
+          /etc/init.d/chrony start
       - name: Download patch files
         env:
           GH_TOKEN: ${{ secrets.TBM_VYOS_PATCH_TOKEN }}
