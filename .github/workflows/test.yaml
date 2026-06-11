@@ -89,8 +89,7 @@ jobs:
           go-version: "1.26.4"
       - name: Build the package
         run: |
-          chown -R vyos_bld:vyos_bld ../../../../vyos-build
-          sudo -u vyos_bld python3 build.py
+          python3 build.py
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - name: List the .deb files built
         run: |
@@ -128,12 +127,6 @@ jobs:
     needs: [setup-matrix]
     runs-on: ${{ matrix.runner_label }}
     steps:
-      - name: Print user
-        run: |
-          echo "User name: $(id -un)"
-          echo "User ID: $(id -u)"
-          echo "Group name: $(id -gn)"
-          echo "Group ID: $(id -g)"
       - name: Install dependencies
         run: |
           python3 -m pip install toml
