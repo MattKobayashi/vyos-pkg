@@ -150,7 +150,7 @@ jobs:
       - name: Build the package
         run: |
           sudo apt-get update
-          dpkg-buildpackage --build=binary --unsigned-changes --unsigned-source
+          dpkg-buildpackage --build=binary --post-clean --unsigned-changes --unsigned-source
         working-directory: packages/${{ matrix.package }}
       - name: List the .deb files built
         run: |
