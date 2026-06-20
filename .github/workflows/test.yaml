@@ -5,12 +5,34 @@ jobs:
     name: Setup matrix
     outputs:
       package: ${{ steps.container.outputs.json }}
+      package-extra: ${{ steps.container-extra.outputs.json }}
+      deps: ${{ steps.deps.outputs.json }}
     runs-on: ubuntu-24.04
     steps:
       - id: container
         name: Parse container package list
         run: |
           input='${{ inputs.package }}'
+          if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
+            json='[]'
+          else
+            json=$(printf '%s' "$input" | grep -oE '[^,[:space:]]+' | jq -R . | jq -sc .)
+          fi
+          echo "json=$json" >> "$GITHUB_OUTPUT"
+      - id: container-extra
+        name: Parse container package-extra list
+        run: |
+          input='${{ inputs.package-extra }}'
+          if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
+            json='[]'
+          else
+            json=$(printf '%s' "$input" | grep -oE '[^,[:space:]]+' | jq -R . | jq -sc .)
+          fi
+          echo "json=$json" >> "$GITHUB_OUTPUT"
+      - id: deps
+        name: Parse container deps list
+        run: |
+          input='${{ inputs.deps }}'
           if ! printf '%s' "$input" | grep -qE '[^,[:space:]]+'; then
             json='[]'
           else
@@ -93,12 +115,89 @@ jobs:
           - arch: arm64
             runner_label: ubuntu-24.04-arm
     timeout-minutes: 150
+  build-extra:
+    container:
+      env:
+        TZ: Australia/Brisbane
+      image: ghcr.io/techbymatt/vyos-build:rolling
+      options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
+    defaults:
+      run:
+        shell: bash
+    name: Build (extra)
+    needs: [setup-matrix]
+    permissions:
+      packages: read
+    runs-on: ${{ matrix.runner_label }}
+    steps:
+      - id: checkout
+        name: Checkout the package repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          path: packages/${{ matrix.package }}
+          ref: rolling
+          repository: vyos/${{ matrix.package }}
+      - if: ${{ matrix.deps }}
+        name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ${{ matrix.deps }}
+      - id: cache
+        name: Cache build
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.checkout.outputs.commit }}
+          path: |
+            packages/*.deb
+            packages/*.buildinfo
+            packages/*.changes
+            packages/*.dsc
+            packages/*debian.tar.*
+            packages/*orig.tar.*
+      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        name: Build the package
+        run: |
+          sudo apt-get update
+          dpkg-buildpackage --build=binary --post-clean --unsigned-changes --unsigned-source
+        working-directory: packages/${{ matrix.package }}
+      - name: List the .deb files built
+        run: |
+          ls -halp packages/*.deb
+      - name: Upload the .deb files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: deb-${{ matrix.package }}-${{ matrix.arch }}
+          path: |
+            packages/*.deb
+      - name: Upload the remaining build files as artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-${{ matrix.package }}-${{ matrix.arch }}
+          path: |
+            packages/*.buildinfo
+            packages/*.changes
+            packages/*.dsc
+            packages/*debian.tar.*
+            packages/*orig.tar.*
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        deps: ${{ fromJson(needs.setup-matrix.outputs.deps) }}
+        package: ${{ fromJson(needs.setup-matrix.outputs.package-extra) }}
+        include:
+          - arch: amd64
+            runner_label: ubuntu-24.04
+          - arch: arm64
+            runner_label: ubuntu-24.04-arm
   publish:
     name: Publish
-    if: ${{ always() && needs.setup-matrix.result == 'success' && needs.build.result == 'success' }}
+    if: ${{ !cancelled() && needs.setup-matrix.result == 'success' && (needs.build.result == 'success' || needs.build-extra.result == 'success') }}
     needs:
-      - setup-matrix
       - build
+      - build-extra
+      - setup-matrix
     permissions:
       id-token: write
       pages: write
@@ -168,8 +267,16 @@ name: Test
 on:
   workflow_dispatch:
     inputs:
+      deps:
+        description: A comma-separated list of dependency packages to be installed into the vyos-build container
+        required: false
+        type: string
       package:
         description: A comma-separated list of packages to be built using the vyos-build container
+        required: false
+        type: string
+      package-extra:
+        description: A comma-separated list of packages from outside the vyos-build repository to be built using the vyos-build container
         required: false
         type: string
 permissions:
