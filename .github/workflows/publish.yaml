@@ -212,6 +212,7 @@ jobs:
           - vyatta-biosdevname
           - vyatta-cfg
           - vyos-http-api-tools
+          - vyos-live-build
         include:
           - arch: amd64
             runner_label: ubuntu-24.04
