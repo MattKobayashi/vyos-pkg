@@ -121,7 +121,7 @@ jobs:
           - tacacs
           - telegraf
           - udp-broadcast-relay
-          - unionfs-fuse
+          # - unionfs-fuse
           - vyos-1x
           - waagent
           - wide-dhcpv6
