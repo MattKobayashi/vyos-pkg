@@ -315,7 +315,7 @@ jobs:
 name: Repository
 on:
   schedule:
-    - cron: "42 19 1,8,15,22,29 * *"
+    - cron: "42 19 */5 * *"
   workflow_dispatch:
 permissions:
   contents: read
