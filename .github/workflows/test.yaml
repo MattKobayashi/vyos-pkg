@@ -142,20 +142,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes ${{ matrix.deps }}
-      - id: cache
-        name: Cache build
-        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # v6.0.0
-        with:
-          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.checkout.outputs.commit }}
-          path: |
-            packages/*.deb
-            packages/*.buildinfo
-            packages/*.changes
-            packages/*.dsc
-            packages/*debian.tar.*
-            packages/*orig.tar.*
-      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
-        name: Build the package
+      - name: Build the package
         run: |
           sudo apt-get update
           dpkg-buildpackage --build=binary --post-clean --unsigned-changes --unsigned-source
