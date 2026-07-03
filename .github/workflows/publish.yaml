@@ -41,13 +41,13 @@ jobs:
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.4"
-      - id: toml_commit
-        name: Get package.toml commit
+      - id: package_dir_commit
+        name: Get package directory commit
         run: |
           if [[ '${{ matrix.package }}' == 'linux-kernel' ]]; then
-            hash="$(git log -n 1 --format=%H -- 'data/defaults.toml')"
+            hash="$(git log -n 1 --format=%H -- 'data/defaults.toml' 'scripts/package-build/${{ matrix.package }}/')"
           else
-            hash="$(git log -n 1 --format=%H -- 'scripts/package-build/${{ matrix.package }}/package.toml')"
+            hash="$(git log -n 1 --format=%H -- 'scripts/package-build/${{ matrix.package }}/')"
           fi
           echo "commit=${hash}" >> "$GITHUB_OUTPUT"
         working-directory: vyos-build
@@ -55,7 +55,7 @@ jobs:
         name: Cache build
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.toml_commit.outputs.commit }}
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.package_dir_commit.outputs.commit }}
           path: |
             vyos-build/scripts/package-build/**/*.deb
             vyos-build/scripts/package-build/**/*.buildinfo
