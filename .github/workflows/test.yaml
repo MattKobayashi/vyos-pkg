@@ -121,6 +121,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
+      max-parallel: 4
     timeout-minutes: 150
   build-extra:
     container:
@@ -185,6 +186,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
+      max-parallel: 4
   publish:
     name: Publish
     if: ${{ !cancelled() && needs.setup-matrix.result == 'success' && (needs.build.result == 'success' || needs.build-extra.result == 'success') }}
