@@ -44,7 +44,7 @@ jobs:
     container:
       env:
         TZ: Australia/Brisbane
-      image: ghcr.io/techbymatt/vyos-build:rolling@sha256:0a076acd17e0f5d8a1e708bd46d5f65e130387831f58b3ed76f30d8d1339b0af
+      image: ghcr.io/techbymatt/vyos-build:rolling@sha256:4ab49e0cccf85d98cc8f0920c21ccbfca5bc6ef834242331922979ecf79a69ab
       options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
     defaults:
       run:
@@ -120,7 +120,7 @@ jobs:
     container:
       env:
         TZ: Australia/Brisbane
-      image: ghcr.io/techbymatt/vyos-build:rolling@sha256:0a076acd17e0f5d8a1e708bd46d5f65e130387831f58b3ed76f30d8d1339b0af
+      image: ghcr.io/techbymatt/vyos-build:rolling@sha256:4ab49e0cccf85d98cc8f0920c21ccbfca5bc6ef834242331922979ecf79a69ab
       options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
     defaults:
       run:
