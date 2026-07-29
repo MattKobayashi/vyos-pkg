@@ -136,7 +136,7 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
-      max-parallel: 4
+      max-parallel: 8
     timeout-minutes: 150
   build-extra:
     container:
@@ -284,6 +284,7 @@ jobs:
           excluded_packages=(
             "bash-completion-test-subject.deb"
             "amazon-cloudwatch-agent.deb"
+            "hsflowd.deb"
           )
           shopt -s globstar nullglob
           for package in packages/rolling/**/*.deb; do
