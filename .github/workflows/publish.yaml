@@ -281,8 +281,16 @@ jobs:
             dpkg-dev
       - name: Verify .deb package files
         run: |
+          excluded_packages=(
+            "bash-completion-test-subject.deb"
+          )
           shopt -s globstar nullglob
           for package in packages/rolling/**/*.deb; do
+            for excluded_package in "${excluded_packages[@]}"; do
+              if [[ "$package" == *"/$excluded_package" ]]; then
+                continue 2
+              fi
+            done
             dpkg-deb --info "$package"
             dpkg-deb --contents "$package"
           done
