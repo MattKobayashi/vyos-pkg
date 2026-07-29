@@ -279,6 +279,13 @@ jobs:
             coreutils \
             gnupg2 \
             dpkg-dev
+      - name: Verify .deb package files
+        run: |
+          shopt -s globstar nullglob
+          for package in packages/rolling/**/*.deb; do
+            dpkg-deb --info "$package"
+            dpkg-deb --contents "$package"
+          done
       - name: Insert environment variables
         run: |
           {
