@@ -283,6 +283,7 @@ jobs:
         run: |
           excluded_packages=(
             "bash-completion-test-subject.deb"
+            "amazon-cloudwatch-agent.deb"
           )
           shopt -s globstar nullglob
           for package in packages/rolling/**/*.deb; do
