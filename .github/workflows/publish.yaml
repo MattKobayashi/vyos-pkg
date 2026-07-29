@@ -285,6 +285,7 @@ jobs:
             "bash-completion-test-subject.deb"
             "amazon-cloudwatch-agent.deb"
             "hsflowd.deb"
+            "sflowovsd.deb"
           )
           shopt -s globstar nullglob
           for package in packages/rolling/**/*.deb; do
