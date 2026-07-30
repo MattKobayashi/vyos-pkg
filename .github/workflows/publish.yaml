@@ -282,10 +282,6 @@ jobs:
       - name: Verify .deb package files
         run: |
           excluded_packages=(
-            "bash-completion-test-subject.deb"
-            "amazon-cloudwatch-agent.deb"
-            "hsflowd.deb"
-            "sflowovsd.deb"
           )
           shopt -s globstar nullglob
           for package in packages/rolling/**/*.deb; do
@@ -295,7 +291,6 @@ jobs:
               fi
             done
             dpkg-deb --info "$package"
-            dpkg-deb --contents "$package"
           done
       - name: Insert environment variables
         run: |
