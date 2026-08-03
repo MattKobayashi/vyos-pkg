@@ -56,7 +56,7 @@ jobs:
         with:
           key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.package_dir_commit.outputs.commit }}
           path: |
-            vyos-build/scripts/package-build/**/*.deb
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
             vyos-build/scripts/package-build/**/*.buildinfo
             vyos-build/scripts/package-build/**/*.changes
             vyos-build/scripts/package-build/**/*.dsc
@@ -69,14 +69,14 @@ jobs:
         working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - name: List the .deb files built
         run: |
-          ls -halp vyos-build/scripts/package-build/**/*.deb
+          ls -halp vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: deb-${{ matrix.package }}-${{ matrix.arch }}
           path: |
-            vyos-build/scripts/package-build/**/*.deb
+            vyos-build/scripts/package-build/${{ matrix.package }}/*.deb
       - name: Upload the remaining build files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
