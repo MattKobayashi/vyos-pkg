@@ -269,13 +269,48 @@ jobs:
       - name: Verify the .deb files can be installed
         run: |
           sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install apt-utils
           shopt -s globstar nullglob
           packages=(./packages/**/*.deb)
           if ((${#packages[@]} == 0)); then
             echo "No .deb files found" >&2
             exit 1
           fi
-          sudo apt-get --no-install-recommends --yes install "${packages[@]}"
+
+          repository="$(mktemp -d)"
+          source_list=/etc/apt/sources.list.d/vyos-package-verification.list
+          preferences=/etc/apt/preferences.d/vyos-package-verification
+          cleanup() {
+            sudo rm -f "$source_list" "$preferences"
+            rm -rf "$repository"
+          }
+          trap cleanup EXIT
+
+          package_index=0
+          for package in "${packages[@]}"; do
+            ln -s "$(realpath "$package")" "$repository/$package_index.deb"
+            package_index=$((package_index + 1))
+          done
+          apt-ftparchive packages "$repository" > "$repository/Packages"
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin=VyOS-Verification \
+            -o APT::FTPArchive::Release::Label=VyOS-Verification \
+            release "$repository" > "$repository/Release"
+          printf 'deb [trusted=yes] file:%s ./\n' "$repository" \
+            | sudo tee "$source_list" >/dev/null
+          printf '%s\n' \
+            'Package: *' \
+            'Pin: release o=VyOS-Verification' \
+            'Pin-Priority: 1001' \
+            | sudo tee "$preferences" >/dev/null
+          sudo apt-get update
+
+          for package in "${packages[@]}"; do
+            package_name="$(dpkg-deb --field "$package" Package)"
+            package_version="$(dpkg-deb --field "$package" Version)"
+            sudo apt-get --no-install-recommends --reinstall --yes install \
+              "$package_name=$package_version"
+          done
     strategy:
       fail-fast: false
       matrix:
