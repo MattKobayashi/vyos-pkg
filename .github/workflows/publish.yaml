@@ -269,7 +269,13 @@ jobs:
       - name: Verify the .deb files can be installed
         run: |
           sudo apt-get update
-          sudo apt-get --no-install-recommends --yes install packages/*.deb
+          shopt -s globstar nullglob
+          packages=(./packages/**/*.deb)
+          if ((${#packages[@]} == 0)); then
+            echo "No .deb files found" >&2
+            exit 1
+          fi
+          sudo apt-get --no-install-recommends --yes install "${packages[@]}"
     strategy:
       fail-fast: false
       matrix:
