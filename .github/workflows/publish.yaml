@@ -276,6 +276,10 @@ jobs:
             echo "No .deb files found" >&2
             exit 1
           fi
+          excluded_packages=(
+            strongswan-charon
+            strongswan-charon-dbgsym
+          )
 
           repository="$(mktemp -d)"
           chmod 755 "$repository"
@@ -312,6 +316,9 @@ jobs:
           for package in "${packages[@]}"; do
             package_name="$(dpkg-deb --field "$package" Package)"
             package_version="$(dpkg-deb --field "$package" Version)"
+            if [[ " ${excluded_packages[*]} " == *" $package_name "* ]]; then
+              continue
+            fi
             sudo apt-get -o APT::Sandbox::User=root \
               --no-install-recommends --allow-downgrades --reinstall --yes install \
               "$package_name=$package_version"
