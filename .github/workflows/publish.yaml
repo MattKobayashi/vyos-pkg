@@ -320,6 +320,8 @@ jobs:
               continue
             fi
             sudo apt-get -o APT::Sandbox::User=root \
+              -o Dpkg::Options::=--force-confdef \
+              -o Dpkg::Options::=--force-confold \
               --no-install-recommends --allow-downgrades --reinstall --yes install \
               "$package_name=$package_version"
           done
