@@ -70,6 +70,11 @@ jobs:
       - name: List the .deb files built
         run: |
           ls -halp vyos-build/scripts/package-build/**/*.deb
+      - name: Verify the .deb files can be installed
+        run: |
+          sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install \
+            vyos-build/scripts/package-build/**/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -185,6 +190,10 @@ jobs:
       - name: List the .deb files built
         run: |
           ls -halp packages/*.deb
+      - name: Verify the .deb files can be installed
+        run: |
+          sudo apt-get update
+          sudo apt-get --no-install-recommends --yes install packages/*.deb
       - name: Upload the .deb files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -279,19 +288,6 @@ jobs:
             coreutils \
             gnupg2 \
             dpkg-dev
-      - name: Verify .deb package files
-        run: |
-          excluded_packages=(
-          )
-          shopt -s globstar nullglob
-          for package in packages/rolling/**/*.deb; do
-            for excluded_package in "${excluded_packages[@]}"; do
-              if [[ "$package" == *"/$excluded_package" ]]; then
-                continue 2
-              fi
-            done
-            dpkg-deb --info "$package"
-          done
       - name: Insert environment variables
         run: |
           {
