@@ -292,11 +292,14 @@ jobs:
             ln -s "$(realpath "$package")" "$repository/$package_index.deb"
             package_index=$((package_index + 1))
           done
-          apt-ftparchive packages "$repository" > "$repository/Packages"
-          apt-ftparchive \
-            -o APT::FTPArchive::Release::Origin=VyOS-Verification \
-            -o APT::FTPArchive::Release::Label=VyOS-Verification \
-            release "$repository" > "$repository/Release"
+          (
+            cd "$repository"
+            apt-ftparchive packages . > Packages
+            apt-ftparchive \
+              -o APT::FTPArchive::Release::Origin=VyOS-Verification \
+              -o APT::FTPArchive::Release::Label=VyOS-Verification \
+              release . > Release
+          )
           printf 'deb [trusted=yes] file:%s ./\n' "$repository" \
             | sudo tee "$source_list" >/dev/null
           printf '%s\n' \
