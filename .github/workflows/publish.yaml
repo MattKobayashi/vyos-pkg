@@ -252,7 +252,7 @@ jobs:
     defaults:
       run:
         shell: bash
-    name: Verify (${{ matrix.arch }})
+    name: Verify
     needs:
       - build
       - build-extra
