@@ -278,6 +278,7 @@ jobs:
           fi
 
           repository="$(mktemp -d)"
+          chmod 755 "$repository"
           source_list=/etc/apt/sources.list.d/vyos-package-verification.list
           preferences=/etc/apt/preferences.d/vyos-package-verification
           cleanup() {
@@ -303,12 +304,13 @@ jobs:
             'Pin: release o=VyOS-Verification' \
             'Pin-Priority: 1001' \
             | sudo tee "$preferences" >/dev/null
-          sudo apt-get update
+          sudo apt-get -o APT::Sandbox::User=root update
 
           for package in "${packages[@]}"; do
             package_name="$(dpkg-deb --field "$package" Package)"
             package_version="$(dpkg-deb --field "$package" Version)"
-            sudo apt-get --no-install-recommends --reinstall --yes install \
+            sudo apt-get -o APT::Sandbox::User=root \
+              --no-install-recommends --reinstall --yes install \
               "$package_name=$package_version"
           done
     strategy:
