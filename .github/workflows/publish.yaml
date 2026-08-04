@@ -34,7 +34,7 @@ jobs:
         name: Patch vyos-build
         run: |
           cp --verbose ../patches/vyos-build/*.patch .
-          git apply --3way --verbose *.patch
+          git apply --3way --verbose ./*.patch
         working-directory: vyos-build
       - name: Setup golang
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
