@@ -104,6 +104,7 @@ jobs:
           - frr_exporter
           - hostap
           - hsflowd
+          - iproute2
           - isc-dhcp
           - isc-kea
           - keepalived
@@ -115,17 +116,20 @@ jobs:
           - net-snmp
           - netfilter
           - node_exporter
+          - openssl
           - openvpn-otp
           - owamp
           - podman
           - pyhumps
           - radvd
+          - shim-signed
           - squid
           - strongswan
           - tacacs
           - telegraf
           - udp-broadcast-relay
           # - unionfs-fuse
+          # - vpp
           - vyos-1x
           - waagent
           - wide-dhcpv6
