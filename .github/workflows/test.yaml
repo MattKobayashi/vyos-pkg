@@ -81,13 +81,13 @@ jobs:
         with:
           go-version: "1.26.5"
       - if: ${{ matrix.arch == 'amd64' && matrix.package == 'shim-signed' }}
-        name: Pin shim-signed dependencies
+        name: Prefer VyOS shim dependencies
         run: |
-          sed -i \
-            -e 's/"shim-helpers-amd64-signed",/"shim-helpers-amd64-signed=1+15.8+1~deb12u1",/' \
-            -e 's/"shim-unsigned"/"shim-unsigned=16.0-1+vyos1"/' \
-            package.toml
-        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
+          printf '%s\n' \
+            'Package: shim-unsigned shim-helpers-amd64-signed shim-helpers-amd64-signed-template' \
+            'Pin: origin "packages.vyos.net"' \
+            'Pin-Priority: 1001' \
+            | sudo tee /etc/apt/preferences.d/vyos-shim >/dev/null
       - name: Build the package
         run: |
           python3 build.py
