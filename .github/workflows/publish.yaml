@@ -40,6 +40,14 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.5"
+      - if: ${{ matrix.arch == 'amd64' && matrix.package == 'shim-signed' }}
+        name: Pin shim-signed dependencies
+        run: |
+          sed -i \
+            -e 's/"shim-helpers-amd64-signed",/"shim-helpers-amd64-signed=1+15.8+1~deb12u1",/' \
+            -e 's/"shim-unsigned"/"shim-unsigned=16.0-1+vyos1"/' \
+            package.toml
+        working-directory: vyos-build/scripts/package-build/${{ matrix.package }}
       - id: package_dir_commit
         name: Get package directory commit
         run: |
@@ -140,6 +148,9 @@ jobs:
             runner_label: ubuntu-24.04
           - arch: arm64
             runner_label: ubuntu-24.04-arm
+        exclude:
+          - arch: arm64
+            package: shim-signed
       max-parallel: 8
     timeout-minutes: 150
   build-extra:
