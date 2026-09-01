@@ -348,7 +348,7 @@ jobs:
         run: |
           rm -r scripts
       - name: Generate directory indices
-        uses: gacts/directory-listing@382b3439bf3a5787b20350780a0cc18553a47acd # v1.0.4
+        uses: gacts/directory-listing@dbce3ff489d0e8689b0c45c6a63fe28b2a23ca66 # v1.0.6
         with:
           show-hidden: true
           target: _site/deb
