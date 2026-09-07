@@ -1,6 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "ignorePresets": [
-    "docker:pinDigests"
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": false
+    }
   ]
 }
