@@ -427,7 +427,7 @@ jobs:
         TZ: Australia/Brisbane
       image: ghcr.io/techbymatt/vyos-build:rolling
       options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
-    name: Restore extra (cache hit)
+    name: Restore (cache hit)
     needs:
       - cache-check
     permissions:
