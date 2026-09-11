@@ -292,6 +292,7 @@ jobs:
       - name: Upload the remaining build files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          if-no-files-found: ignore
           name: build-${{ matrix.package }}-${{ matrix.arch }}
           path: |
             vyos-build/scripts/package-build/**/*.buildinfo
@@ -302,7 +303,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.cache-check.outputs.build-matrix) }}
-      max-parallel: 8
+      max-parallel: 4
     timeout-minutes: 150
   build-extra:
     container:
@@ -363,6 +364,7 @@ jobs:
       - name: Upload the remaining build files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          if-no-files-found: ignore
           name: build-${{ matrix.package }}-${{ matrix.arch }}
           path: |
             packages/*.buildinfo
@@ -409,6 +411,7 @@ jobs:
       - name: Upload the remaining build files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          if-no-files-found: ignore
           name: build-${{ matrix.package }}-${{ matrix.arch }}
           path: |
             vyos-build/scripts/package-build/**/*.buildinfo
@@ -419,7 +422,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.cache-check.outputs.build-cached-matrix) }}
-      max-parallel: 8
     timeout-minutes: 20
   restore-cached-extra:
     container:
@@ -455,6 +457,7 @@ jobs:
       - name: Upload the remaining build files as artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          if-no-files-found: ignore
           name: build-${{ matrix.package }}-${{ matrix.arch }}
           path: |
             packages/*.buildinfo
@@ -465,7 +468,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.cache-check.outputs.build-extra-cached-matrix) }}
-      max-parallel: 4
     timeout-minutes: 20
   verify:
     container:
@@ -476,6 +478,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && contains(needs.*.result, 'success') }}
     name: Verify
     needs:
       - build
