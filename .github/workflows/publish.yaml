@@ -326,7 +326,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: packages/${{ matrix.package }}
-          ref: rolling
+          ref: ${{ matrix.commit }}
           repository: vyos/${{ matrix.package }}
       - if: ${{ matrix.deps }}
         name: Install dependencies
@@ -337,7 +337,7 @@ jobs:
         name: Cache build
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ steps.checkout.outputs.commit }}
+          key: cache-${{ matrix.package }}-${{ matrix.arch }}-${{ matrix.commit }}
           path: |
             packages/*.deb
             packages/*.buildinfo
@@ -378,17 +378,11 @@ jobs:
       max-parallel: 4
     timeout-minutes: 30
   restore-cached:
-    container:
-      env:
-        TZ: Australia/Brisbane
-      image: ghcr.io/techbymatt/vyos-build:rolling
-      options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
+    continue-on-error: true
     if: ${{ fromJSON(needs.cache-check.outputs.restore-matrix).include[0] != null }}
     name: Restore (cache hit)
     needs:
       - cache-check
-    permissions:
-      packages: read
     runs-on: ${{ matrix.runner_label }}
     steps:
       - name: Restore the cached build
