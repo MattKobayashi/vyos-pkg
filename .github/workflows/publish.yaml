@@ -210,6 +210,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    if: ${{ fromJSON(needs.cache-check.outputs.build-matrix).include[0] != null }}
     name: Build (container)
     needs:
       - cache-check
@@ -312,6 +313,7 @@ jobs:
     defaults:
       run:
         shell: bash
+    if: ${{ fromJSON(needs.cache-check.outputs.build-extra-matrix).include[0] != null }}
     name: Build (extra)
     needs:
       - cache-check
@@ -381,6 +383,7 @@ jobs:
         TZ: Australia/Brisbane
       image: ghcr.io/techbymatt/vyos-build:rolling
       options: "--privileged --sysctl net.ipv6.conf.lo.disable_ipv6=0"
+    if: ${{ fromJSON(needs.cache-check.outputs.restore-matrix).include[0] != null }}
     name: Restore (cache hit)
     needs:
       - cache-check
